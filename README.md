@@ -1,7 +1,6 @@
 # Spin
 
-Spin is a groovy-based command-line tool for resource and service orchestration. It allows you to 
-install/start/stop/uninstall and obtain the status of any spin-defined resource or service.
+Spin is a groovy-based command-line tool for resource and service orchestration. It allows you to install, start, stop, uninstall and obtain the status of any spin-defined resource or service.
 
 * [Installation](#installation)
   * [Prerequisites](#prerequisites)
