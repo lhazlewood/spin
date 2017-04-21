@@ -11,18 +11,19 @@ install/start/stop/uninstall and obtain the status of any spin-defined resource 
 * [Configuration](#configuration)
   * [spin.groovy](#spingroovy)
   * [Universal Service Configuration Options](#universal-service-configuration-options)
+    <!--
     * [type](#service-type)
-    <!--   * [heuristic](#service-type-heuristic) -->
+      * [heuristic](#service-type-heuristic)
     * [profiles](#service-profiles)
     * [enabled](#service-enabled)
     * [dependsOn](#service-dependsOn)
-    <!--  * [evaluation order](#service-dependency-order) -->
+      * [evaluation order](#service-dependency-order)
     * [healthchecks](#service-healthchecks)
-    <!--  * [command](#service-healthchecks-command)
+      * [command](#service-healthchecks-command)
       * [tries](#service-healthchecks-tries)
-      * [sleep](#service-healthchecks-sleep) -->
+      * [sleep](#service-healthchecks-sleep)
     * [stdout](#service-stdout)
-      <!-- * [enabled](#service-stdout-enabled)
+      * [enabled](#service-stdout-enabled)
       * [file](#service-stdout-file) -->
   * [Provided Plugins](#provided-plugins)
     * [Docker Machine](#dockerMachine)
