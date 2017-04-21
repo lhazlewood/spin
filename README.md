@@ -185,14 +185,14 @@ Each type of service (docker, samza, etc) has its own configuration options, and
 While each type of service has its own configuration options, there are a few options that are universal to any 
 defined service:
 
-* type
-* profiles
-* enabled 
-* dependsOn 
-* healthchecks 
-* stdout
+* [type](#service-type)
+* [profiles](#service-profiles)
+* [enabled](#service-enabled)
+* [dependsOn](#service-dependsOn)
+* [healthchecks](#service-healthchecks)
+* [stdout](#service-stdout)
 
-#### type
+#### <a name="service-type"></a> type
 
 The `type` property is required and defines the type of plugin that will be used to execute any spin command specified 
 for the service.
@@ -206,7 +206,7 @@ with a name that ends with '`Plugin.groovy`' and that file is present in either 
 The above directory locations are searched in the order listed above. Once a plugin is found it is returned 
 immediately, short-circuiting any remaining locations.
 
-##### heuristic
+##### <a name="service-type-heuristic"></a> heuristic
 
 The plugin name heuristic is as follows, using the example name `docker`
 
@@ -217,7 +217,7 @@ The plugin name heuristic is as follows, using the example name `docker`
 This flexible nature allows you to define custom plugins as desired for any type of service. Information on creating 
 custom plugins will be covered later.
 
-#### profiles
+#### <a name="service-profiles"></a> profiles
 
 The `profiles` property is optional. It defines one or more profiles that must be enabled when running `spin` (by using
 the `-p name,name2,...` flag) in order for the service to be enabled.
@@ -254,7 +254,7 @@ property. However, because `profiles` allows you more options of when a plugin i
 preferred over using the `enabled` property. For example, you could specify a `disabled` profile, and as long as you 
 never run `spin -p disabled`, that service will not be invoked.
 
-#### enabled
+#### <a name="service-enabled"></a> enabled
 
 The `enabled` property is optional and allows you to define whether or not the service will be enacted upon at all when
 executing `spin`. It is mostly convenient for entirely disabling a service without having to comment it out or remove 
@@ -267,7 +267,7 @@ If you set this property to `true` (or do not define the property at all), the s
 Because the `profiles` property supports more flexible configuration of when a service is enabled or not, it is 
 generally recommended to use the `profiles` property instead of `enabled` in most cases.
 
-#### dependsOn
+#### <a name="service-dependsOn"></a> dependsOn
 
 The `dependsOn` property is optional and allows you to define one or more services that should be executed first 
 before executing the current service. 
@@ -285,7 +285,7 @@ In the above example, the `kafka` service indicates that it depends on `zookeepe
   }
 ```
 
-##### Service Evaluation Order
+##### <a name="service-dependency-order"></a>Service Evaluation Order
 
 All `dependsOn` usages are evaluated to form a service Directed Acyclic Graph (DAG) (via a 
 [topological sort](https://en.wikipedia.org/wiki/Topological_sorting) with 
@@ -300,7 +300,7 @@ When running `spin stop` or spin `uninstall`, the command execution order is rev
 services are stopped or uninstalled _after_ dependent services. In the above example, calling `spin stop` ensures that
 `stop` is executed for `kafka` first before calling `stop` for `zookeeper`.
 
-#### healthchecks
+#### <a name="service-healthchecks"></a> healthchecks
 
 The `healthchecks` property is optional. It allows you to specify one or more healthchecks that must pass after 
 starting a service before the service is seen as healthy. Each defined healthcheck must successfully complete in a 
@@ -326,11 +326,15 @@ services {
 ```
 
 This example has one healthcheck named `ready`, but this name can be whatever string you want that makes sense for 
-your healthcheck. The `ready` definition has 3 properties: `command`, `tries`, and `sleep`, covered next.
+your healthcheck. Any number of named healthcheck definitions may be defined within `healthchecks`.
 
-Any number of healthchecks may be defined.
+A healthcheck definition supports 3 properties:
 
-##### command
+* [command](#service-healthchecks-command)
+* [tries](#service-healthchecks-tries)
+* [sleep](#service-healthchecks-sleep), covered next.
+
+##### <a name="service-healthchecks-command"></a> command
 
 This is a required String, and must be a shell command (or a sequence of commands piped together). If the 
 command/commands return(s) with an exit value of `0` (zero), then the healthcheck is considered successful, and no 
@@ -338,7 +342,7 @@ further tries for _that particular healthcheck definition_ will be attempted. An
 healthcheck does not impact other healthchecks in any way - all defined healthchecks for a service must pass for the 
 service to be considered successfully started.
 
-##### tries
+##### <a name="service-healthchecks-tries"></a> tries
 
 The `tries` property specifies the (integer) number of attempts the `command` will be executed before giving up and 
 indicating that the service is unhealthy and has failed to start. The first time the command executes successfully 
@@ -346,14 +350,14 @@ indicating that the service is unhealthy and has failed to start. The first time
 
 The `tries` property is optional. If not specified, the default value is `20` tries.
 
-##### sleep
+##### <a name="service-healthchecks-sleep"></a> sleep
 
 The `sleep` property specifies the (integer) number of seconds to sleep/wait after an unsuccessful healthcheck 
 attempt before executing the next attempt.
 
 The `sleep` property is optional. If not specified, the default value is `3` seconds.
 
-#### stdout
+#### <a name="service-stdout"></a> stdout
 
 Most successful invocations of underlying service commands result in verbose output that ins't necessary when 
 running `spin`, so spin does not relay the underlying service shell command success stdout by default. However, this 
@@ -361,12 +365,12 @@ output could be beneficial in some cases, especially if trying to find out why a
 service. If you want to enable stdout when running a spin command for a service, you can set this property to one of 
 two values: either the String `enabled` or a String file path.
 
-##### enabled
+##### <a name="service-stdout-enabled"></a> enabled
 
 Setting `stdout` to a String value of `enabled` will print out anything from the service's stdout or stderr streams 
 directly to the same console that is running spin.
 
-##### File Path
+##### <a name="service-stdout-file"></a> File Path
 
 If you set the `stdout` property value to a String value that is not equal to the literal values `enabled`, 
 `disabled`, `true`, or `false`, then spin interprets this string as a File path. Spin will redirect output of the 
@@ -376,12 +380,12 @@ target service (stdout and stderr) to the specified file.
 
 The following list of plugins below are those that are available out-of-the-box when you install spin.
 
-* dockerMachine
+* [dockerMachine](#dockerMachine)
 * docker
 * exejar
 * samza
 
-#### dockerMachine
+#### <a name="dockerMachine"></a> dockerMachine
 
 The `dockerMachine` plugin allows managing the lifecycle of a docker-machine-based virtual machine (the VM itself, 
 not any docker containers that run inside it). It is enabled by setting the service definition's `type` property to 
