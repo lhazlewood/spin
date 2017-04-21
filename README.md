@@ -49,7 +49,7 @@ install/start/stop/uninstall and obtain the status of any spin-defined resource 
       * [options](#exejar-options)
       * [systemProperties](#exejar-systemProperties)
       * [workingDir](#exejar-workingDir) -->
-* [Developing Custom Plugins](#developing-custom-plugins)
+<!-- * [Developing Custom Plugins](#developing-custom-plugins) -->
 
 ## Installation
 
@@ -379,7 +379,7 @@ A healthcheck definition may have 3 properties:
 
 * [command](#service-healthchecks-command)
 * [tries](#service-healthchecks-tries)
-* [sleep](#service-healthchecks-sleep), covered next.
+* [sleep](#service-healthchecks-sleep)
 
 ##### <a name="service-healthchecks-command"></a> command
 
@@ -1007,7 +1007,9 @@ The `workingDir` property is optional. If specified, it equals the base director
 the samza tarball. If unspecified, the default value is equivalent to `$HOME/.spin/temp/samza`
 
 -->
+<!-- 
 
 ## Developing Custom Plugins
 
 TBD
+-->
