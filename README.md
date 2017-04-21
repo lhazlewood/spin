@@ -1,0 +1,943 @@
+# Spin
+
+Spin is a groovy-based command-line tool for resource and service orchestration. It allows you to 
+install/start/stop/uninstall and obtain the status of any spin-defined resource or service.
+
+## Installation
+
+### Prerequisites
+
+#### Groovy
+
+Spin is written in Groovy and delegates most logic to Groovy plugins. This requires you to have a Groovy command-line 
+interpreter available in your shell. For example, using Homebrew:
+
+```bash
+brew install groovy
+```
+
+If you do not use Homebrew, [download Groovy](http://www.groovy-lang.org/download.html) 2.4.10 or later and ensure that 
+the groovy executable is in your `$PATH`.
+
+### Setup
+
+Create a directory that will contain the distribution, cd into that dir, and download the distribution:
+
+```bash
+mkdir -p ~/devtools/spin
+cd ~/devtools/spin
+git archive --remote=git@github.com:lhazlewood/spin.git HEAD:src/main/groovy | tar -x
+```
+
+Ensure that the `spin` script is in your `$PATH`. For example, assuming the above download location, you can add the 
+following to your `$HOME/.bash_profile` file:
+
+```bash
+export PATH="$HOME/devtools/spin:$PATH"
+```
+
+This allows you to open a terminal, and from any directory run:
+
+```bash
+spin
+```
+
+And you will see the current runtime status of any services that spin knows about.
+
+## Usage
+
+Run `spin help` to see options and commands:
+
+```
+lhazlewood@Less-MacBook-Pro:~$ spin help
+Usage: spin [options] <command> [<service-name>]
+
+Options:
+  -h, -help, --h, --help       Show help
+  -f <spin-config-file>        Use <spin-config-file> instead of searching default file locations
+  -p name[,name2,name3,...]    A comma-delimited list of profiles to enable
+  -e <environment-name>        Enable environment configuration for the specified <environment-name>
+
+Commands:
+  help                         Show help
+  install                      Install all uninstalled services
+  install <service-name>       Install the service named <service-name>
+  start                        Starts all services
+  start <service-name>         Starts only the service named <service-name>
+  status                       Show the status of all services
+  status <service-name>        Show the status of <service-name>
+  stop                         Stops all services
+  stop <service-name>          Stops only the service named <service-name>
+  uninstall                    Uninstalls all installed services
+  uninstall <service-name>     Uninstalls the service named <service-name>
+```
+
+## Configuration
+
+When spin executes, it will by default look for a services configuration file located in one of the following 
+locations, in order (first one found wins):
+
+* `$PWD/spin.groovy`
+* `$PWD/.spin.groovy`
+* `$HOME/.spin/spin.groovy`
+
+If you want to specify a different services config (i.e. the 'context' that spin will assume), you can use the 
+`-f <spin-config-file>` option as described in the help output above. For convenience, we'll assume that you'll 
+configure a default file.
+
+### spin.groovy
+
+This file is a [Groovy configuration file](http://docs.groovy-lang.org/latest/html/documentation/#_configslurper) with 
+a top-level `services` block. The `services` block contains one or more nested named blocks. Each nested name is the 
+name of a service. It's associated block is a service definition. You can install, start, stop, uninstall and obtain 
+the runtime status of a service by using its spin service name.
+
+Here is an example config:
+
+```groovy
+services {
+
+  vm {
+    type = 'dockerMachine'
+    profiles = 'all'
+    machine = 'dev'
+    driver {
+      name = 'virtualbox'
+      options {
+        memory = 4096
+      } 
+    }
+  }
+  
+  zookeeper {
+    type = 'docker'
+    image = 'zookeeper:3.4.7'
+    ports = ['2181:2181', '2888:2888', '3888:3888']
+    healthchecks {
+      ready {
+        command = "docker exec zookeeper /zk/bin/zkServer.sh status"
+      }
+    }
+  }
+  
+  kafka {
+    type = 'docker'
+    dependsOn = 'zookeeper'
+    image = 'kafka:0.9.0.0'
+    ports = ['9092:9092']
+    links = ['zookeeper:zk']
+    healthchecks {
+      ready {
+        command = "docker logs --tail=15 kafka | grep ', started (kafka.server.KafkaServer)'"
+      }
+    } 
+  }
+  
+  `schema-normalizer' {
+    type = 'samza'
+    dependsOn = 'kafka'
+    artifact {
+      groupId = 'com.foo.bar'
+      artifactId = 'my-samza-microservice'
+      version = '0.1.0-SNAPSHOT'
+    } 
+    java {
+      // Each list element will be appended directly to JAVA_OPTS
+      opts = ['-Xms1g', '-Xmx1g']
+      // each name: value pair here will automatically be appended to JAVA_OPTS as -Dkey=value:
+      systemProperties = [foo: 'bar', baz: 'boo']
+    }
+    config {
+      // default value assumes config/deploy.properties, relative to the root of the tarball:
+      // but a different properties file can be specified here if desired:
+      file = 'config/deploy.properties'
+      overrides {
+        // Any overrides to the default config/deploy.properties file as key: value pairs:
+        foo = 'bar'
+        hello = 'world'
+      } 
+    }
+  }
+}
+```
+
+The above configuration indicates there are four services defined:
+
+* a docker-machine virtual machine named `vm`
+* a docker service named `zookeeper`
+* a docker service named `kafka`
+* a samza service named `schema-normalizer`
+
+When interacting with `spin` you can control any service using its name. For example:
+
+```bash
+spin start zookeeper
+spin status zookeeper
+spin stop zookeeper
+```
+
+You can add more services by adding more top-level _service-name_-to-_service-definition_ pairs like the ones above.
+
+Each type of service (docker, samza, etc) has its own configuration options, and those will be covered later.
+
+### Universal Service Configuration Options
+
+While each type of service has its own configuration options, there are a few options that are universal to any 
+defined service:
+
+* type
+* profiles
+* enabled 
+* dependsOn 
+* healthchecks 
+* stdout
+
+#### type
+
+The `type` property is required and defines the type of plugin that will be used to execute any spin command specified 
+for the service.
+
+The field value is a string, and assumes a heuristic: the value is actually a lower-case version of a Groovy class file
+with a name that ends with '`Plugin.groovy`' and that file is present in either the following two directories: 
+
+1. `$HOME/.spin/plugins`
+2. `<spin install directory>/plugins`
+
+The above directory locations are searched in the order listed above. Once a plugin is found it is returned 
+immediately, short-circuiting any remaining locations.
+
+##### heuristic
+
+The plugin name heuristic is as follows, using the example name `docker`
+
+1. Take the plugin name and uppercase the first character: `docker` --> `Docker`
+2. Take the resulting capitalized name and suffix it with Plugin.groovy: `Docker` --> `DockerPlugin.groovy`
+3. Look for a file with this name in the above listed plugin directories. Use the first one found.
+
+This flexible nature allows you to define custom plugins as desired for any type of service. Information on creating 
+custom plugins will be covered later.
+
+#### profiles
+
+The `profiles` property is optional. It defines one or more profiles that must be enabled when running `spin` (by using
+the `-p name,name2,...` flag) in order for the service to be enabled.
+
+The profiles property value may be either a single string value or a list of string values, e.g. `['foo', 'bar', ...]`
+
+The above example configuration specifies a `profiles` value of `all`:
+
+
+```groovy
+  vm {
+    type = 'dockerMachine'
+    profiles = 'all'
+    // etc...
+  }
+```
+
+This ensures the `vm` service will only be invoked when the `all` profile is enabled. For example:
+
+```bash
+spin -p all start
+```
+
+Similarly, running just `spin start` will not interact with the `vm` service.
+
+Profiles are useful because you may not want to start and stop certain services every time you run `spin`.
+
+For example, you may want the `vm` virtual machine to always be running behind the scenes while you bulk start/stop 
+other services. This allows you to run, say, `spin stop` and the other services will be stopped, but `vm` will not be 
+stopped.
+
+Service definitions without a `profiles` property will always be executed, unless they are disabled via the `enabled` 
+property. However, because `profiles` allows you more options of when a plugin is enabled or not, it is usually 
+preferred over using the `enabled` property. For example, you could specify a `disabled` profile, and as long as you 
+never run `spin -p disabled`, that service will not be invoked.
+
+#### enabled
+
+The `enabled` property is optional and allows you to define whether or not the service will be enacted upon at all when
+executing `spin`. It is mostly convenient for entirely disabling a service without having to comment it out or remove 
+it from the spin configuration file.
+
+If you set this property to `false`, the corresponding service will not be invoked when executing spin.
+
+If you set this property to `true` (or do not define the property at all), the service configuration is evaluated.
+
+Because the `profiles` property supports more flexible configuration of when a service is enabled or not, it is 
+generally recommended to use the `profiles` property instead of `enabled` in most cases.
+
+#### dependsOn
+
+The `dependsOn` property is optional and allows you to define one or more services that should be executed first 
+before executing the current service. 
+
+The `dependsOn` property value may be either a single string value or a list of string values, e.g. 
+`['foo', 'bar', ...]`
+
+In the above example, the `kafka` service indicates that it depends on `zookeeper`:
+
+```groovy
+  kafka {
+    type = 'docker'
+    dependsOn = 'zookeeper'
+    // etc...
+  }
+```
+
+##### Service Evaluation Order
+
+All `dependsOn` usages are evaluated to form a service Directed Acyclic Graph (DAG) (via a 
+[topological sort](https://en.wikipedia.org/wiki/Topological_sorting) with 
+[Tarjan's algorithm](http://www.geeksforgeeks.org/tarjan-algorithm-find-strongly-connected-components/) if you're
+curious) to ensure correct command execution order across services.
+
+When running `spin install`, `spin start` or `spin status`, the `install`, `start`, or `status` command is guaranteed
+to execute on required services first before executing the command on depending services. In the above example, calling
+`spin start` ensures that `start` is executed for `zookeeper` first before calling `start` for `kafka`.
+
+When running `spin stop` or spin `uninstall`, the command execution order is reversed. This ensures that required 
+services are stopped or uninstalled _after_ dependent services. In the above example, calling `spin stop` ensures that
+`stop` is executed for `kafka` first before calling `stop` for `zookeeper`.
+
+#### healthchecks
+
+The `healthchecks` property is optional. It allows you to specify one or more healthchecks that must pass after 
+starting a service before the service is seen as healthy. Each defined healthcheck must successfully complete in a 
+certain amount of time - if it does not, spin treats this as a failed startup and will exit accordingly.
+
+If present, the `healthchecks` property must be a `Map` of one or more _healthcheck-name_ (a `String`) to 
+_healthcheck-definition_ (a `Map`) pairs. For example:
+
+```groovy
+services {
+  
+  myservice {
+    // etc...
+    healthchecks {
+      ready {
+        command = '<shell command here>'
+        tries = 20
+        sleep = 3
+      }
+    }
+  } 
+}
+```
+
+This example has one healthcheck named `ready`, but this name can be whatever string you want that makes sense for 
+your healthcheck. The `ready` definition has 3 properties: `command`, `tries`, and `sleep`, covered next.
+
+Any number of healthchecks may be defined.
+
+##### command
+
+This is a required String, and must be a shell command (or a sequence of commands piped together). If the 
+command/commands return(s) with an exit value of `0` (zero), then the healthcheck is considered successful, and no 
+further tries for _that particular healthcheck definition_ will be attempted. An early success return for one 
+healthcheck does not impact other healthchecks in any way - all defined healthchecks for a service must pass for the 
+service to be considered successfully started.
+
+##### tries
+
+The `tries` property specifies the (integer) number of attempts the `command` will be executed before giving up and 
+indicating that the service is unhealthy and has failed to start. The first time the command executes successfully 
+(with an exit value of zero), all subsequent attempts are skipped.
+
+The `tries` property is optional. If not specified, the default value is `20` tries.
+
+##### sleep
+
+The `sleep` property specifies the (integer) number of seconds to sleep/wait after an unsuccessful healthcheck 
+attempt before executing the next attempt.
+
+The `sleep` property is optional. If not specified, the default value is `3` seconds.
+
+#### stdout
+
+Most successful invocations of underlying service commands result in verbose output that ins't necessary when 
+running `spin`, so spin does not relay the underlying service shell command success stdout by default. However, this 
+output could be beneficial in some cases, especially if trying to find out why a command failed for a particular 
+service. If you want to enable stdout when running a spin command for a service, you can set this property to one of 
+two values: either the String `enabled` or a String file path.
+
+##### enabled
+
+Setting `stdout` to a String value of `enabled` will print out anything from the service's stdout or stderr streams 
+directly to the same console that is running spin.
+
+##### File Path
+
+If you set the `stdout` property value to a String value that is not equal to the literal values `enabled`, 
+`disabled`, `true`, or `false`, then spin interprets this string as a File path. Spin will redirect output of the 
+target service (stdout and stderr) to the specified file.
+
+### Provided Plugins
+
+The following list of plugins below are those that are available out-of-the-box when you install spin.
+
+* dockerMachine
+* docker
+* exejar
+* samza
+
+#### dockerMachine
+
+The `dockerMachine` plugin allows managing the lifecycle of a docker-machine-based virtual machine (the VM itself, 
+not any docker containers that run inside it). It is enabled by setting the service definition's `type` property to 
+`dockerMachine` (case sensitive).
+
+The `dockerMachine` plugin is a spin-specific abstraction on top of the `docker-machine` executable; `docker-machine`
+must already be installed and in your `$PATH`.
+
+An example configuration:
+
+```groovy
+  vm {
+    type = 'dockerMachine'
+    profiles = 'mac'
+    machine = 'dev'
+    driver {
+      name = 'virtualbox'
+      options {
+        memory = 4096
+      }
+    }
+    routes = ['bridge']
+  }
+```
+
+##### machine
+
+The `machine` property is required. The value is the name of the docker machine to use when executing `docker-machine`.
+
+##### driver
+
+The `driver` property is a map that specifies the driver to use when creating the virtual machine.
+
+###### name
+
+The driver `name` property specifies the docker-machine driver name to use when creating the virtual machine. The 
+above example configuration example specifies that the `virtualbox` driver should be used.
+
+###### options
+
+The driver `options` property is a set of driver-specific name/value pairs to supply to the driver when creating the 
+virtual machine. The above configuration example specifies that the `virtualbox` driver should use `4096` megs of
+ram when creating the virtual machine.
+
+The options specified here are applied to the `docker-machine create` command using the standard docker-machine 
+_--drivername-optionname-optionvalue_ flag convention on the command line. This implies that the above configuration 
+example adds the following to the docker- machine create command:
+
+`--virtualbox-memory 4096`
+
+##### routes
+
+The `routes` property can be a single string or a list-of-strings. It is optional.
+
+**NOTE: If this property is non-null, sudo is required to modify the local operating system's routing table. Spin will prompt for the sudo password when required.**
+
+###### spin start
+
+When the docker host is started via `spin start`, spin will prompt for the sudo password and then automatically 
+create routing table entries in the local operating system to the named docker networks within the docker host.
+
+For example, assume that the `routes` value equals `bridge`, the docker 
+[default network](https://docs.docker.com/engine/userguide/networking/#default-networks). When the docker host is 
+started via `spin start`, the `dockerMachine` plugin will:
+
+1. Discover the docker `bridge` network's subnet (by running `docker network inspect bridge`, inspecting the 
+resulting JSON, and using the `[0].IPAM.Config[0].Subnet` value). For example: `172.17.0.0/16`
+2. Discover the docker host's IP address (by running `docker ip` _machine_, where _machine_ is the value of the spin 
+   `machine` config property listed above). For example: `192.168.99.100`
+3. Add a route to the local operating system to ensure packets intended for the named network are routed to the 
+   docker host (which acts as a gateway for that network). For example: `route -n add 172.17.0.0/16 192.168.99.100`
+
+This ensures that any packets sent by the local operating system to a specified subnet will automatically be routed to 
+the docker host's assigned IP address. The above example means packets destined for `172.17.0.0/16` will be routed to 
+`192.168.99.100`, whereby the docker host will then likely route those packets to a target docker container.
+
+Routes are created for each specified docker network name to ensure each network is routable.
+
+###### spin stop
+
+When using spin to stop the docker host via `spin stop`, all routes for each named docker network are automatically 
+removed from the local operating system routing table.
+
+#### docker
+
+The docker plugin manages the lifecycle of a single docker container. It is enabled by setting the service 
+definition's `type` property to `docker`. The docker plugin automatically sets the `-d` and `–name` *`serviceName`* 
+flags when invoking `docker run` to ensure the docker container runs as background service and is accessible/queryable
+by using the spin service name, respectively.
+
+An example configuration:
+
+```groovy
+  cassandra1 {
+    type = 'docker'
+    dependsOn = 'vm'
+    image = 'cassandra:2'
+    ports = ['9160:9160', '9042:9042', '7199:7199', '7001:7001', '7000:7000']
+    environment {
+      CASSANDRA_START_RPC = true
+    }
+    healthchecks {
+      ready {
+        command = "docker exec cassandra1 /usr/bin/cqlsh -e 'describe KEYSPACES' | grep system"
+      } 
+    }
+  }
+  
+  cassandra2 {
+    type = 'docker'
+    dependsOn = 'cassandra1'
+    image = 'cassandra:2'
+    links = ['cassandra1:cassandra']
+    environment {
+      CASSANDRA_START_RPC = true
+    }
+    healthchecks {
+      ready {
+        command = "docker exec cassandra2 /usr/bin/cqlsh -e 'describe KEYSPACES' | grep system"
+      } 
+    }
+  }
+```
+
+The docker plugin supports the following configuration options:
+
+* cpu_shares
+* environment 
+* hostname
+* image
+* links
+* mem_limit
+* options
+* ports
+* ulimits
+* volumes
+* options
+
+##### cpu_shares
+
+The `cpu_shares` property is optional. It allows you to set the
+[CPU Shares Constraint](https://docs.docker.com/engine/reference/run/#cpu-share-constraint) on a container.
+
+##### environment
+
+The `environment` property is optional. If specified, it must be either a 
+[list or a map of environment variables](https://docs.docker.com/compose/compose-file/#environment) to expose to the 
+docker container.
+
+##### hostname
+
+The `hostname` property is optional. It allows you to set the 
+[docker container hostname](https://docs.docker.com/engine/reference/run/).
+
+##### image
+
+The `image` property is required. The value is the name of the docker image name or id (and optionally the image 
+version number) to use when creating the docker container.
+
+Some example image values:
+
+```groovy
+  image = 'ubuntu'
+  image = 'orchardup/postgresql'
+  image = 'a4bc65fd'
+```
+
+##### links
+
+The `links` property is optional. It is an array of strings. It allows you to link a container to other containers in 
+another service. Either specify both the service name and the link alias (`SERVICE:ALIAS`), or just the service name 
+(which will also be used for the alias). Example:
+
+```groovy
+  links = ['db', 'db:database', 'hazelcast']
+```
+
+An entry with the alias’s name will be created in `/etc/hosts` inside containers for this service, e.g:
+
+```bash
+  172.17.2.186  db
+  172.17.2.186  database
+  172.17.2.187  hazelcast
+```
+
+Environment variables will also be created - see the 
+[docker environment variable reference](https://docs.docker.com/compose/environment-variables/) for details.
+
+##### mem_limit
+
+The `mem_limit` property is optional. It allows you to set a container's upper 
+[memory limit](https://docs.docker.com/engine/reference/run/#user-memory-constraints).
+
+##### options
+
+The `options` property is optional. It is a convenience/catch-all list-of-strings property that allows you to specify 
+any additional options that are not already supported by the spin docker config properties.
+
+It allows you to still use a docker run option if the spin docker plugin does not yet support it via .groovy config. 
+Each value in the list is appended directly to the `docker run` command without modification.
+
+##### ports
+
+The `ports` property is optional. It is a list of container ports (as Strings) to expose. Either specify both ports 
+(`HOST:CONTAINER`), or just the container port (and a random host port will be chosen).
+
+Example port declaration:
+
+```groovy
+  ports = [
+    '3000',
+    '3000-3005',
+    '8000:8000',
+    '9090-9091:8080-8081',
+    '49100:22',
+    '127.0.0.1:8001:8001',
+    '127.0.0.1:5000-5010:5000-5010'
+  ]
+```
+
+##### ulimits
+
+The `ulimits` property is optional. It allows you to override a container's default ulimits. You can either specify a 
+single limit as an integer or soft/hard limits as a mapping. For example:
+
+```groovy
+  ulimits = 65535
+  // this is the same as the following:
+  // ulimits {
+  //   nproc = 65535
+  // }
+```
+or
+
+```groovy
+  ulimits {
+    nproc = 65535
+    nofile {
+      soft = 20000
+      hard = 40000
+    } 
+  }
+```
+
+Also see the [docker run --ulimit flag documentation](https://docs.docker.com/engine/reference/commandline/run/#set-ulimits-in-container---ulimit) for more.
+
+##### volumes
+
+The `volumes` property allows you to mount paths as volumes, optionally specifying a path on the host machine 
+(`HOST:CONTAINER`), or an access mode (`HOST:CONTAINER:ro`). Example:
+
+```groovy
+  volumes = [
+    '/var/lib/mysql',
+    './cache:/tmp/cache',
+    '~/configs:/etc/configs/:ro'
+  ]
+```
+For more information see the 
+[docker run -v](https://docs.docker.com/engine/reference/commandline/run/#mount-volume--v---read-only) flag 
+documentation and the general [Docker Volumes](https://docs.docker.com/engine/tutorials/dockervolumes/) documentation.
+
+#### exejar
+
+The exejar plugin allows you to execute and run an executable jar as a system service. It is enabled by setting the 
+service definition's `type` value to `exejar`
+
+Service definition example:
+
+```groovy
+  webapp {
+    type = 'exejar'
+    artifact {
+        groupId = 'mycompany'
+        artifactId = 'mywebapp'
+        version = '1'
+    }
+    // instead of a maven artifact, you could specify a file path
+    // via the 'jar' property, for example:
+    //jar = 'path/to/jar/file'
+    stdout = './application.log'
+    options = ['-Xms256m', '-Xmx1g']
+    systemProperties {
+        'spring.main.show_banner' = false
+        foo = 'bar' 
+    }
+    args = ['hello', 'world']
+    healthchecks {
+      ready {
+        command = "curl localhost:8080 -s -f -o /dev/null"
+        sleep = 5
+      }
+    }
+  }
+```
+
+When `spin start` is called for this definition, spin will execute the following Java command and turn it into a 
+background service:
+
+```bash
+java -Xms256m -Xmx1g -Dspring.main.show_banner=false -Dfoo=bar -jar mywebapp-1.jar hello world
+```
+ 
+In addition to the universal configuration properties, the following additional properties exist.
+
+##### args
+
+`args` is an optional array of program arguments to supply to the executable jar itself. These args will be passed to 
+the jar's designated `public static void main(String[] args)` method.
+
+For example, the following config:
+
+```groovy
+  webapp {
+    artifact {
+      groupId = 'foo'
+      artifactId = 'bar'
+      version = '0.1.0'
+    }
+    args = ['hello', 'world']
+  }
+```
+
+will result in the following Java command being executed (`args` in bold):
+
+`java -jar bar-0.1.0.jar`**`hello world`**
+
+Program (`main` method) arguments for the executable jar are declared _after_ the referenced jar name. Options to the 
+java command itself (for the JVM) come _before_ the `-jar` flag. These options can be defined as `options` and 
+`systemProperties` declarations, covered below.
+
+##### artifact
+
+`artifact` is a map that contains valid Maven `groupId`, `artifactId` and `version` values of the .jar you want to 
+execute.
+
+Spin will use this metadata, and, under the hood, use the Maven Dependency Plugin to auto-download the specified .jar 
+from an appropriate Maven repository server (assumes you have `$HOME/.m2/settings.xml` setup correctly). 
+
+Either the `artifact` or the `jar` property must be specified.
+
+##### jar
+
+`jar` is a `File` or a `String` path that reflects the executable jar location on the file system. The specified file 
+must exist, must be a file (not a directory) and must end with the name '.jar'.
+
+Either the `jar` or the `artifact` property must be specified.
+
+##### options
+
+`options` is an optional array of values to add as arguments to the `java` command before the `-jar` flag. You may 
+find the available options by running the `java` command on the command line and looking at the resulting list of 
+options (for example `-Xmx` options or `-version` etc).
+
+An example service definition with options:
+
+```groovy
+    webapp {
+      artifact {
+        groupId = 'foo'
+        artifactId = 'bar'
+        version = '0.1.0'
+      }
+    options = ['-Xms256m', '-Xmx1g']
+}
+```
+
+this definition will result in the following Java command being executed (options in bold): 
+
+`java `**`-Xms256m -Xmx1g`**`-jar bar-0.1.0.jar`
+
+##### systemProperties
+
+`systemProperties` is optional. Each `name: value` pair defined in this map will automatically be appended as 
+`-Dname="value"` system property declarations in the java `options` list above.
+
+This is a convenience property - identical behavior can be achieved by using `options` alone. For example, the 
+following two `exejava` nested declarations achieve the exact same effect:
+
+Using `systemProperties`:
+```groovy
+  // ...
+  systemProperties {
+    foo = 'bar'
+    hello = 'world'
+  }
+```
+Using `options`:
+```groovy
+  // ...
+  options = [
+    '-Dfoo=bar',
+    '-Dhello=world'
+  ]
+```
+
+Even though both are effectively the same thing, defining many `-D` pairs in opts can be cumbersome and perhaps more 
+difficult to read and understand.
+
+##### workingDir
+
+The `workingDir` property is optional, and if specified, must be a `File` or a `String` path that reflects a directory 
+on the file system.
+
+If specified, the java process will be launched in that directory; it is the location that will be returned if the 
+process calls `System.getProperty("user.dir");`
+
+If not specified, the current working directory when executing spin will be used, i.e. `$PWD`
+
+#### samza
+
+The samza plugin allows managing the lifecycle of a Samza job packaged as a tarball. It is enabled by setting the 
+service definition's `type` property to `samza`
+
+In addition to the universal configuration properties, the following additional properties exist. 
+
+...create section TOC here
+
+Service definition example:
+
+```groovy
+  mySamzaService {
+    type = 'samza'
+    dependsOn = 'kafka'
+    artifact {
+      groupId = 'com.foo.whatever'
+      artifactId = 'whatever-artifact-name'
+      version = '0.1.0-SNAPSHOT'
+    }
+    java {
+      // Each list element will be appended directly to JAVA_OPTS
+      opts = ['-Xms1g', '-Xmx1g']
+      // each name: value pair here will automatically be appended to JAVA_OPTS as -Dkey=value:
+      systemProperties = [foo: 'bar', baz: 'boo']
+    }
+    config {
+      // default value assumes config/deploy.properties, relative to the root of the tarball:
+      // but a different properties file can be specified here if desired:
+      file = 'config/deploy.properties'
+      overrides {
+        // Any overrides to the default config/deploy.properties file as key: value pairs:
+        foo = 'bar'
+        hello = 'world'
+      }
+    } 
+  }
+```
+
+##### artifact
+
+Either `artifact` or `file` must be specified. If specifying `artifact`, it reflects the required Maven metadata of 
+the Samza tarball in your Maven repository server that you want to use. Spin will use this metadata, and, under the 
+hood, use the Maven Dependency Plugin to auto-download the specified Samza tarball from the Maven repository server 
+(assumes you have `$HOME/.m2/settings.xml` setup correctly).
+
+`groupId`, `artifactId` and `version` fields are required. `type` and `classifer` fields are optional and default to 
+`tar.gz` and `dist` respectively.
+
+##### config
+
+The `config` property is optional. It allows you to override the default base deployment properties file if desired as 
+well as set any system properties without needing to edit the properties file.
+
+###### file
+
+The config `file` property is optional. The default value is `config/deploy.properties` and this file is expected to 
+be in the Samza tarball downloaded from the Maven repository. If this file is not present in the tarball, or you just 
+wish to use another config file instead of the default, you can specify the config `file` field. The value can be 
+either an absolute file path or a path relative to the tarball root.
+
+###### overrides
+
+The config `overrides` section is optional. It allows you to override any of the properties defined in the config 
+file (either the default or the explicitly specified one) by setting `name: value` pairs. Each `name: value` pair 
+defined in this map will be translated to `–config name=value` declarations being appended to the Samza 
+`bin/run-job.sh` call.
+
+For example, assume that the `config/deploy.properties` file had a property value inside it:
+
+```properties
+systems.kafka.consumer.zookeeper.connect=172.17.42.1:2181
+```
+
+and assume the following config `overrides` section:
+
+```groovy
+  //...
+  config {
+    overrides {
+      'systems.kafka.consumer.zookeeper.connect' = 'localhost:2181'
+    }
+  }
+```
+
+In this case, when spin starts the Samza service, it will append a 
+`–config systems.kafka.consumer.zookeeper.connect=localhost:2181` flag when invoking Samza's `bin/run-job.sh` script. 
+This in turn ensures that the Samza process sees a runtime value for 
+`systems.kafka.consumer.zookeeper.connect` of `localhost:2181`, _not_ the default .properties file value of 
+`172.17.42.1:2181`.
+
+##### file
+
+Either `artifact` or `file` must be specified. If specifying `file`, the value is the (String) file system path of the
+Samza tarball file to be deployed. Absolute file paths will be accessed as expected. Relative paths are relative to 
+the working directory where spin is executed.
+
+##### java
+
+The java section is optional. Any values you set here will automatically be included in the `JAVA_OPTS` shell 
+environment variable used by Samza's `run-job.sh` script.
+
+###### opts
+
+`opts` is optional. Any values found in the opts list-of-strings will be appended directly to the `JAVA_OPTS` variable 
+without modification.
+
+###### systemProperties
+
+`systemProperties` is optional. Each `name: value` pair defined in this map will automatically be appended as 
+`-Dname="value"` system property declarations to the `JAVA_OPTS` variable.
+
+This is a convenience property - identical behavior can be achieved by using `opts` alone. For example, the following 
+two `java` configs achieve the exact same effect:
+
+Using `systemProperties`:
+
+```groovy
+  // ... 
+  java {
+    systemProperties {
+      foo = 'bar'
+      hello = 'world'
+    } 
+  }
+```
+
+Using `opts`:
+
+```groovy
+  // ...
+  java {
+    opts = [
+      '-Dfoo=bar',
+      '-Dhello=world'
+    ] 
+  }
+```
+
+Even though both are effectively the same thing, defining many `-D` pairs in opts can be cumbersome and perhaps more 
+difficult to read and understand.
+
+##### workingDir
+
+The `workingDir` property is optional. If specified, it equals the base directory where the samza plugin will extract 
+the samza tarball. If unspecified, the default value is equivalent to `$HOME/.spin/temp/samza`
+
+## Developing Custom Plugins
+
+TBD

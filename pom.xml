@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.leshazlewood.spin</groupId>
+    <artifactId>spin-parent</artifactId>
+    <packaging>pom</packaging>
+    <version>0.1.0-SNAPSHOT</version>
+    <name>Spin CLI</name>
+
+    <url>https://github.com/lhazlewood/spin</url>
+    <inceptionYear>2016</inceptionYear>
+
+    <scm>
+        <connection>scm:git:git@github.com:lhazlewood/spin.git</connection>
+        <developerConnection>scm:git:git@github.com:lhazlewood/spin.git</developerConnection>
+        <url>https://github.com/lhazlewood/spin</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <properties>
+        <source.encoding>UTF-8</source.encoding>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <jdk.version>1.8</jdk.version>
+        <groovy.version>2.4.10</groovy.version>
+        <gmavenplus.version>1.5</gmavenplus.version>
+        <snakeyaml.version>1.18</snakeyaml.version>
+        <ivy.version>2.4.0</ivy.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>${groovy.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>${snakeyaml.version}</version>
+        </dependency>
+        <!-- Needed by @Grab annotation in intellij.  Ivy .jar is not required to run the script on the
+             command line: -->
+        <dependency>
+            <groupId>org.apache.ivy</groupId>
+            <artifactId>ivy</artifactId>
+            <version>${ivy.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.codehaus.gmavenplus</groupId>
+                    <artifactId>gmavenplus-plugin</artifactId>
+                    <version>${gmavenplus.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.codehaus.groovy</groupId>
+                            <artifactId>groovy-all</artifactId>
+                            <version>${groovy.version}</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>compile</goal>
+                                <goal>testCompile</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.gmavenplus</groupId>
+                <artifactId>gmavenplus-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
