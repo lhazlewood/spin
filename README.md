@@ -70,19 +70,20 @@ the groovy executable is in your `$PATH`.
 
 ### Setup
 
-Create a directory that will contain the distribution, cd into that dir, and download the distribution:
+Run the following command:
 
 ```bash
-mkdir -p ~/devtools/spin
-cd ~/devtools/spin
-git archive --remote=git@github.com:lhazlewood/spin.git HEAD:src/main/groovy | tar -x
+export SPIN_HOME="$HOME/devtools/spin" && mkdir -p "$SPIN_HOME" && 
+curl -sL https://github.com/lhazlewood/spin/archive/master.tar.gz | \
+tar --strip-components=4 -C "$SPIN_HOME" -xz spin-master/src/main/groovy
 ```
 
 Ensure that the `spin` script is in your `$PATH`. For example, assuming the above download location, you can add the 
-following to your `$HOME/.bash_profile` file:
+following to `$HOME/.bash_profile`:
 
 ```bash
-export PATH="$HOME/devtools/spin:$PATH"
+export SPIN_HOME="$HOME/devtools/spin"
+export PATH="$SPIN_HOME/spin:$PATH"
 ```
 
 This allows you to open a terminal, and from any directory run:
