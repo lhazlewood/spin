@@ -82,7 +82,7 @@ following to `$HOME/.bash_profile`:
 
 ```bash
 export SPIN_HOME="$HOME/devtools/spin"
-export PATH="$SPIN_HOME/spin:$PATH"
+export PATH="$SPIN_HOME:$PATH"
 ```
 
 This allows you to open a terminal, and from any directory run:
