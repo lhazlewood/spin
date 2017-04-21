@@ -25,14 +25,14 @@ install/start/stop/uninstall and obtain the status of any spin-defined resource 
     * [stdout](#service-stdout)
       * [enabled](#service-stdout-enabled)
       * [file](#service-stdout-file) -->
-  * [Provided Plugins](#provided-plugins)
-    * [Docker Machine](#dockerMachine)
+* [Provided Plugins](#provided-plugins)
+  * [Docker Machine](#dockerMachine)
       <!-- * [machine](#dockerMachine-machine)
       * [driver](#dockerMachine-driver)
         * [name](#dockerMachine-driver-name)
         * [options](#dockerMachine-driver-options)
       * [routes](#dockerMachine-routes) -->
-    * [Docker](#docker)
+  * [Docker](#docker)
       <!-- * [cpu_shares](#docker-cpuShares)
       * [environment](#docker-environment)
       * [hostname](#docker-hostname)
@@ -43,7 +43,7 @@ install/start/stop/uninstall and obtain the status of any spin-defined resource 
       * [ports](#docker-ports)
       * [ulimits](#docker-ulimits)
       * [volumes](#docker-volumes) -->
-    * [Executable Jar](#exejar)
+  * [Executable Jar](#exejar)
       <!-- * [args](#exejar-args)
       * [artifact](#exejar-artifact)
       * [jar](#exejar-jar)
@@ -424,7 +424,7 @@ If you set the `stdout` property value to a String value that is not equal to th
 `disabled`, `true`, or `false`, then spin interprets this string as a File path. Spin will redirect output of the 
 target service (stdout and stderr) to the specified file.
 
-### Provided Plugins
+## Provided Plugins
 
 The following list of plugins below are those that are available out-of-the-box when you install spin.
 
@@ -432,7 +432,7 @@ The following list of plugins below are those that are available out-of-the-box 
 * [docker](#docker)
 * [exejar](#exejar)
 
-#### <a name="dockerMachine"></a> dockerMachine
+### <a name="dockerMachine"></a> dockerMachine
 
 The `dockerMachine` plugin allows managing the lifecycle of a docker-machine-based virtual machine (the VM itself, 
 not any docker containers that run inside it). It is enabled by setting the service definition's `type` property to 
@@ -464,11 +464,11 @@ The `dockerMachine` plugin currently supports the following config properties:
 * [driver](#dockerMachine-driver)
 * [routes](#dockerMachine-routes)
 
-##### <a name="dockerMachine-machine"></a> machine
+#### <a name="dockerMachine-machine"></a> machine
 
 The `machine` property is required. The value is the name of the docker machine to use when executing `docker-machine`.
 
-##### <a name="dockerMachine-driver"></a> driver
+#### <a name="dockerMachine-driver"></a> driver
 
 The `driver` property is a map that specifies the driver to use when creating the virtual machine.  The map may contain
 the following properties:
@@ -476,12 +476,12 @@ the following properties:
 * [name](#dockerMachine-driver-name)
 * [options](#dockerMachine-driver-options)
 
-###### <a name="dockerMachine-driver-name"></a> name
+##### <a name="dockerMachine-driver-name"></a> name
 
 The driver `name` property specifies the docker-machine driver name to use when creating the virtual machine. The 
 above example configuration example specifies that the `virtualbox` driver should be used.
 
-###### <a name="dockerMachine-driver-options"></a> options
+##### <a name="dockerMachine-driver-options"></a> options
 
 The driver `options` property is a set of driver-specific name/value pairs to supply to the driver when creating the 
 virtual machine. The above configuration example specifies that the `virtualbox` driver should use `4096` megs of
@@ -493,13 +493,13 @@ example adds the following to the docker- machine create command:
 
 `--virtualbox-memory 4096`
 
-##### <a name="dockerMachine-routes"></a> routes
+#### <a name="dockerMachine-routes"></a> routes
 
 The `routes` property can be a single string or a list-of-strings. It is optional.
 
 **NOTE: If this property is non-null, sudo is required to modify the local operating system's routing table. Spin will prompt for the sudo password when required.**
 
-###### spin start
+##### spin start
 
 When the docker host is started via `spin start`, spin will prompt for the sudo password and then automatically 
 create routing table entries in the local operating system to the named docker networks within the docker host.
@@ -521,12 +521,12 @@ the docker host's assigned IP address. The above example means packets destined 
 
 Routes are created for each specified docker network name to ensure each network is routable.
 
-###### spin stop
+##### spin stop
 
 When using spin to stop the docker host via `spin stop`, all routes for each named docker network are automatically 
 removed from the local operating system routing table.
 
-#### docker
+### docker
 
 The docker plugin manages the lifecycle of a single docker container. It is enabled by setting the service 
 definition's `type` property to `docker`. The docker plugin automatically sets the `-d` and `–name` *`serviceName`* 
@@ -580,23 +580,23 @@ The docker plugin supports the following configuration options:
 * [ulimits](#docker-ulimits)
 * [volumes](#docker-volumes)
 
-##### <a name="docker-cpuShares"></a> cpu_shares
+#### <a name="docker-cpuShares"></a> cpu_shares
 
 The `cpu_shares` property is optional. It allows you to set the
 [CPU Shares Constraint](https://docs.docker.com/engine/reference/run/#cpu-share-constraint) on a container.
 
-##### <a name="docker-environment"></a> environment
+#### <a name="docker-environment"></a> environment
 
 The `environment` property is optional. If specified, it must be either a 
 [list or a map of environment variables](https://docs.docker.com/compose/compose-file/#environment) to expose to the 
 docker container.
 
-##### <a name="docker-hostname"></a> hostname
+#### <a name="docker-hostname"></a> hostname
 
 The `hostname` property is optional. It allows you to set the 
 [docker container hostname](https://docs.docker.com/engine/reference/run/).
 
-##### <a name="docker-image"></a> image
+#### <a name="docker-image"></a> image
 
 The `image` property is required. The value is the name of the docker image name or id (and optionally the image 
 version number) to use when creating the docker container.
@@ -609,7 +609,7 @@ Some example image values:
   image = 'a4bc65fd'
 ```
 
-##### <a name="docker-links"></a> links
+#### <a name="docker-links"></a> links
 
 The `links` property is optional. It is an array of strings. It allows you to link a container to other containers in 
 another service. Either specify both the service name and the link alias (`SERVICE:ALIAS`), or just the service name 
@@ -630,12 +630,12 @@ An entry with the alias’s name will be created in `/etc/hosts` inside containe
 Environment variables will also be created - see the 
 [docker environment variable reference](https://docs.docker.com/compose/environment-variables/) for details.
 
-##### <a name="docker-memLimit"></a> mem_limit
+#### <a name="docker-memLimit"></a> mem_limit
 
 The `mem_limit` property is optional. It allows you to set a container's upper 
 [memory limit](https://docs.docker.com/engine/reference/run/#user-memory-constraints).
 
-##### <a name="docker-options"></a> options
+#### <a name="docker-options"></a> options
 
 The `options` property is optional. It is a convenience/catch-all list-of-strings property that allows you to specify 
 any additional options that are not already supported by the spin docker config properties.
@@ -643,7 +643,7 @@ any additional options that are not already supported by the spin docker config 
 It allows you to still use a docker run option if the spin docker plugin does not yet support it via .groovy config. 
 Each value in the list is appended directly to the `docker run` command without modification.
 
-##### <a name="docker-ports"></a> ports
+#### <a name="docker-ports"></a> ports
 
 The `ports` property is optional. It is a list of container ports (as Strings) to expose. Either specify both ports 
 (`HOST:CONTAINER`), or just the container port (and a random host port will be chosen).
@@ -662,7 +662,7 @@ Example port declaration:
   ]
 ```
 
-##### <a name="docker-ulimits"></a> ulimits
+#### <a name="docker-ulimits"></a> ulimits
 
 The `ulimits` property is optional. It allows you to override a container's default ulimits. You can either specify a 
 single limit as an integer or soft/hard limits as a mapping. For example:
@@ -688,7 +688,7 @@ or
 
 Also see the [docker run --ulimit flag documentation](https://docs.docker.com/engine/reference/commandline/run/#set-ulimits-in-container---ulimit) for more.
 
-##### <a name="docker-volumes"></a> volumes
+#### <a name="docker-volumes"></a> volumes
 
 The `volumes` property allows you to mount paths as volumes, optionally specifying a path on the host machine 
 (`HOST:CONTAINER`), or an access mode (`HOST:CONTAINER:ro`). Example:
@@ -704,7 +704,7 @@ For more information see the
 [docker run -v](https://docs.docker.com/engine/reference/commandline/run/#mount-volume--v---read-only) flag 
 documentation and the general [Docker Volumes](https://docs.docker.com/engine/tutorials/dockervolumes/) documentation.
 
-#### exejar
+### exejar
 
 The exejar plugin allows you to execute and run an executable jar as a system service. It is enabled by setting the 
 service definition's `type` value to `exejar`
@@ -754,7 +754,7 @@ In addition to the universal configuration properties, the following additional 
 * [systemProperties](#exejar-systemProperties)
 * [workingDir](#exejar-workingDir)
 
-##### <a name="exejar-args"></a> args
+#### <a name="exejar-args"></a> args
 
 `args` is an optional array of program arguments to supply to the executable jar itself. These args will be passed to 
 the jar's designated `public static void main(String[] args)` method.
@@ -780,7 +780,7 @@ Program (`main` method) arguments for the executable jar are declared _after_ th
 java command itself (for the JVM) come _before_ the `-jar` flag. These options can be defined as `options` and 
 `systemProperties` declarations, covered below.
 
-##### <a name="exejar-artifact"></a> artifact
+#### <a name="exejar-artifact"></a> artifact
 
 `artifact` is a map that contains valid Maven `groupId`, `artifactId` and `version` values of the .jar you want to 
 execute.
@@ -790,14 +790,14 @@ from an appropriate Maven repository server (assumes you have `$HOME/.m2/setting
 
 Either the `artifact` or the `jar` property must be specified.
 
-##### <a name="exejar-jar"></a> jar
+#### <a name="exejar-jar"></a> jar
 
 `jar` is a `File` or a `String` path that reflects the executable jar location on the file system. The specified file 
 must exist, must be a file (not a directory) and must end with the name '.jar'.
 
 Either the `jar` or the `artifact` property must be specified.
 
-##### <a name="exejar-options"></a> options
+#### <a name="exejar-options"></a> options
 
 `options` is an optional array of values to add as arguments to the `java` command before the `-jar` flag. You may 
 find the available options by running the `java` command on the command line and looking at the resulting list of 
@@ -820,7 +820,7 @@ this definition will result in the following Java command being executed (option
 
 `java `**`-Xms256m -Xmx1g`**`-jar bar-0.1.0.jar`
 
-##### <a name="exejar-systemProperties"></a> systemProperties
+#### <a name="exejar-systemProperties"></a> systemProperties
 
 `systemProperties` is optional. Each `name: value` pair defined in this map will automatically be appended as 
 `-Dname="value"` system property declarations in the java `options` list above.
@@ -848,7 +848,7 @@ Using `options`:
 Even though both are effectively the same thing, defining many `-D` pairs in opts can be cumbersome and perhaps more 
 difficult to read and understand.
 
-##### <a name="exejar-workingDir"></a> workingDir
+#### <a name="exejar-workingDir"></a> workingDir
 
 The `workingDir` property is optional, and if specified, must be a `File` or a `String` path that reflects a directory 
 on the file system.
