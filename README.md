@@ -428,9 +428,8 @@ target service (stdout and stderr) to the specified file.
 The following list of plugins below are those that are available out-of-the-box when you install spin.
 
 * [dockerMachine](#dockerMachine)
-* docker
-* exejar
-* samza
+* [docker](#docker)
+* [exejar](#exejar)
 
 #### <a name="dockerMachine"></a> dockerMachine
 
