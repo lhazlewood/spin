@@ -25,7 +25,7 @@ install/start/stop/uninstall and obtain the status of any spin-defined resource 
     * [stdout](#service-stdout)
       * [enabled](#service-stdout-enabled)
       * [file](#service-stdout-file) -->
-* [Provided Plugins](#provided-plugins)
+* [Plugins](#plugins)
   * [Docker Machine](#dockerMachine)
       <!-- * [machine](#dockerMachine-machine)
       * [driver](#dockerMachine-driver)
@@ -424,7 +424,7 @@ If you set the `stdout` property value to a String value that is not equal to th
 `disabled`, `true`, or `false`, then spin interprets this string as a File path. Spin will redirect output of the 
 target service (stdout and stderr) to the specified file.
 
-## Provided Plugins
+## Plugins
 
 The following list of plugins below are those that are available out-of-the-box when you install spin.
 
