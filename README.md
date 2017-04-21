@@ -3,6 +3,54 @@
 Spin is a groovy-based command-line tool for resource and service orchestration. It allows you to 
 install/start/stop/uninstall and obtain the status of any spin-defined resource or service.
 
+* [Installation](#installation)
+  * [Prerequisites](#prerequisites)
+    * [Groovy](#groovy)
+  * [Setup](#setup)
+* [Usage](#usage)
+* [Configuration](#configuration)
+  * [spin.groovy](#spingroovy)
+  * [Universal Service Configuration Options](#universal-service-configuration-options)
+    * [type](#service-type)
+    <!--   * [heuristic](#service-type-heuristic) -->
+    * [profiles](#service-profiles)
+    * [enabled](#service-enabled)
+    * [dependsOn](#service-dependsOn)
+    <!--  * [evaluation order](#service-dependency-order) -->
+    * [healthchecks](#service-healthchecks)
+    <!--  * [command](#service-healthchecks-command)
+      * [tries](#service-healthchecks-tries)
+      * [sleep](#service-healthchecks-sleep) -->
+    * [stdout](#service-stdout)
+      <!-- * [enabled](#service-stdout-enabled)
+      * [file](#service-stdout-file) -->
+  * [Provided Plugins](#provided-plugins)
+    * [Docker Machine](#dockerMachine)
+      <!-- * [machine](#dockerMachine-machine)
+      * [driver](#dockerMachine-driver)
+        * [name](#dockerMachine-driver-name)
+        * [options](#dockerMachine-driver-options)
+      * [routes](#dockerMachine-routes) -->
+    * [Docker](#docker)
+      <!-- * [cpu_shares](#docker-cpuShares)
+      * [environment](#docker-environment)
+      * [hostname](#docker-hostname)
+      * [image](#docker-image)
+      * [links](#docker-links)
+      * [mem_limit](#docker-memLimit)
+      * [options](#docker-options)
+      * [ports](#docker-ports)
+      * [ulimits](#docker-ulimits)
+      * [volumes](#docker-volumes) -->
+    * [Executable Jar](#exejar)
+      <!-- * [args](#exejar-args)
+      * [artifact](#exejar-artifact)
+      * [jar](#exejar-jar)
+      * [options](#exejar-options)
+      * [systemProperties](#exejar-systemProperties)
+      * [workingDir](#exejar-workingDir) -->
+* [Developing Custom Plugins](#developing-custom-plugins)
+
 ## Installation
 
 ### Prerequisites
