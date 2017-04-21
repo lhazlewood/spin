@@ -181,29 +181,28 @@ services {
     } 
   }
   
-  `schema-normalizer' {
-    type = 'samza'
-    dependsOn = 'kafka'
+  webapp {
+    type = 'exejar'
     artifact {
-      groupId = 'com.foo.bar'
-      artifactId = 'my-samza-microservice'
-      version = '0.1.0-SNAPSHOT'
-    } 
-    java {
-      // Each list element will be appended directly to JAVA_OPTS
-      opts = ['-Xms1g', '-Xmx1g']
-      // each name: value pair here will automatically be appended to JAVA_OPTS as -Dkey=value:
-      systemProperties = [foo: 'bar', baz: 'boo']
+        groupId = 'mycompany'
+        artifactId = 'mywebapp'
+        version = '1.2.1'
     }
-    config {
-      // default value assumes config/deploy.properties, relative to the root of the tarball:
-      // but a different properties file can be specified here if desired:
-      file = 'config/deploy.properties'
-      overrides {
-        // Any overrides to the default config/deploy.properties file as key: value pairs:
-        foo = 'bar'
-        hello = 'world'
-      } 
+    // instead of a maven artifact, you could specify a file path
+    // via the 'jar' property, for example:
+    //jar = 'path/to/mywebapp-1.2.1.jar'
+    stdout = './application.log'
+    options = ['-Xms256m', '-Xmx1g']
+    systemProperties {
+        'spring.main.show_banner' = false
+        foo = 'bar' 
+    }
+    args = ['hello', 'world']
+    healthchecks {
+      ready {
+        command = "curl localhost:8080 -s -f -o /dev/null"
+        sleep = 5
+      }
     }
   }
 }
@@ -214,7 +213,7 @@ The above configuration indicates there are four services defined:
 * a docker-machine virtual machine named `vm`
 * a docker service named `zookeeper`
 * a docker service named `kafka`
-* a samza service named `schema-normalizer`
+* an executable jar web application named `webapp`
 
 When interacting with `spin` you can control any service using its name. For example:
 
@@ -226,7 +225,7 @@ spin stop zookeeper
 
 You can add more services by adding more top-level _service-name_-to-_service-definition_ pairs like the ones above.
 
-Each type of service (docker, samza, etc) has its own configuration options, and those will be covered later.
+Each type of service (docker, exejar, etc) has its own configuration options, and those will be covered later.
 
 ### Universal Service Configuration Options
 
