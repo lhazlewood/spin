@@ -36,16 +36,6 @@
             <artifactId>groovy-all</artifactId>
             <classifier>indy</classifier>
         </dependency>
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-        </dependency>
-        <!-- Needed by @Grab annotation in intellij.  Ivy .jar is not required to run the script on the
-             command line: -->
-        <dependency>
-            <groupId>org.apache.ivy</groupId>
-            <artifactId>ivy</artifactId>
-        </dependency>
     </dependencies>
 
 </project>

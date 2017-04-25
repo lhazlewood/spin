@@ -54,13 +54,12 @@
         <jdk.version>1.8</jdk.version>
         <groovy.version>2.4.10</groovy.version>
         <gmavenplus.version>1.5</gmavenplus.version>
-        <snakeyaml.version>1.18</snakeyaml.version>
-        <ivy.version>2.4.0</ivy.version>
     </properties>
 
     <modules>
         <module>core</module>
         <module>cli</module>
+        <module>dist</module>
     </modules>
 
     <dependencyManagement>
@@ -71,23 +70,15 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.leshazlewood.spin</groupId>
+                <artifactId>spin-cli</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
                 <version>${groovy.version}</version>
                 <classifier>indy</classifier>
-            </dependency>
-            <dependency>
-                <groupId>org.yaml</groupId>
-                <artifactId>snakeyaml</artifactId>
-                <version>${snakeyaml.version}</version>
-            </dependency>
-            <!-- Needed by @Grab annotation in intellij.  Ivy .jar is not required to run the script on the
-                 command line: -->
-            <dependency>
-                <groupId>org.apache.ivy</groupId>
-                <artifactId>ivy</artifactId>
-                <version>${ivy.version}</version>
-                <scope>runtime</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -191,7 +182,7 @@
         <profile>
             <id>docs</id>
             <properties>
-                <!-- Don't let JDK 8 JavaDoc linter yell: -->
+                <!-- Suppress JDK 8 JavaDoc linter yelling: -->
                 <additionalparam>-Xdoclint:none</additionalparam>
             </properties>
             <build>
