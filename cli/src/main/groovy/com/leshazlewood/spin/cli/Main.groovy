@@ -1,14 +1,13 @@
 package com.leshazlewood.spin.cli
 
-import groovy.transform.SourceURI
+import com.leshazlewood.spin.lang.Classes
+import com.leshazlewood.spin.lang.UnknownClassException
 
 import java.nio.file.Files
 
 class Main {
 
-    @SourceURI
-    private URI SCRIPT_URI
-
+    private ClassLoader classLoader = null
     private File userDir = null
     private File spinInstallDir = null
     private File userSpinDir = null
@@ -54,10 +53,25 @@ class Main {
 
     Class getPluginClass(Map service) {
 
-        Class clazz = pluginClasses.get(service.type)
+        final String type = service.type
 
+        Class clazz = pluginClasses.get(type)
         if (clazz) return clazz
 
+        String candidate = type  //assumes type is a fully-qualified class name of the plugin to use
+
+        if (!type.contains('.')) { //not a fully qualified class name, use default heuristic:
+            candidate = 'com.leshazlewood.spin.plugin.' + type.capitalize() + 'Plugin'
+        }
+
+        try {
+            clazz = Classes.forName(candidate)
+        } catch (UnknownClassException uce) {
+            String msg = "Unable to load plugin class $candidate for plugin type '$type' for service '${service.name}': ${uce.message}"
+            throw new IllegalArgumentException(msg)
+        }
+
+        /*
         //otherwise we have to look up the plugin file:
         File pluginFile = getPluginFile(service)
 
@@ -283,7 +297,7 @@ class Main {
         /*if (spinConfigFile.name.endsWith('.yaml')) {
             this.spinConfig = loadYamlConfig()
         } else { */
-            this.spinConfig = loadGroovyConfig()
+        this.spinConfig = loadGroovyConfig()
         //}
 
         Map<String, Map> services = spinConfig.services
@@ -403,14 +417,21 @@ class Main {
         }
     }
 
-    File getSpinInstallDir() {
-        if (SCRIPT_URI == null) {
-            return new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath() + "..").getCanonicalFile()
+    static File getSpinInstallDir() {
+
+        String sysPropName = 'app.home'
+        String spinHomeDir = System.properties[sysPropName]
+
+        if (spinHomeDir) {
+            File f = new File(spinHomeDir)
+            if (!f.isDirectory()) {
+                printAndExit("System property '$sysPropName' does not reflect a directory.")
+            }
+            return f
         }
 
-        File f = new File(SCRIPT_URI).getParentFile()
-        assert f.exists() && f.isDirectory()
-        return f
+        throw new IllegalStateException("System property '$sysPropName' has not been set.  This is required and " +
+                "must equal the spin installation directory path.")
     }
 
     static File getSpinUserDir() {
@@ -525,6 +546,7 @@ class Main {
 
         def commands = ['install', 'start', 'stop', 'uninstall', 'status', 'help']
 
+        this.classLoader = getClass().getClassLoader()
         this.spinInstallDir = getSpinInstallDir()
         this.userSpinDir = getSpinUserDir()
         this.userDir = getUserDir()

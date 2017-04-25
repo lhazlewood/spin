@@ -54,6 +54,7 @@
         <jdk.version>1.8</jdk.version>
         <groovy.version>2.4.10</groovy.version>
         <gmavenplus.version>1.5</gmavenplus.version>
+        <slf4j.version>1.7.25</slf4j.version>
     </properties>
 
     <modules>
@@ -79,6 +80,17 @@
                 <artifactId>groovy-all</artifactId>
                 <version>${groovy.version}</version>
                 <classifier>indy</classifier>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>${slf4j.version}</version>
+                <scope>runtime</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
