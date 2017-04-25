@@ -67,7 +67,7 @@
                 <configuration>
                     <repositoryName>lib</repositoryName>
                     <repositoryLayout>flat</repositoryLayout>
-                    <licenseHeaderFile>src/main/resources/LICENSE.txt</licenseHeaderFile>
+                    <licenseHeaderFile>src/main/resources/license-header.txt</licenseHeaderFile>
                     <programs>
                         <program>
                             <id>spin</id>

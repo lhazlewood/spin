@@ -1,4 +1,4 @@
-package plugins
+package com.leshazlewood.spin.plugin
 
 @SuppressWarnings(["GroovyUnusedDeclaration", "GrMethodMayBeStatic"])
 class TestPlugin implements Plugin {

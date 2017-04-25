@@ -1,4 +1,4 @@
-package plugins
+package com.leshazlewood.spin.plugin
 
 @SuppressWarnings(["GroovyUnusedDeclaration", "GrMethodMayBeStatic"])
 class DockerPlugin extends AbstractPlugin {
@@ -6,7 +6,7 @@ class DockerPlugin extends AbstractPlugin {
     private Shell shell = new Shell()
 
     boolean isDockerInPath() {
-        def output = 'which docker'.execute().text
+        def output = 'command -v docker'.execute().text
         return output != null && !''.equals(output)
     }
 
@@ -48,13 +48,13 @@ class DockerPlugin extends AbstractPlugin {
         } catch (ShellException se) {
             if (se.errorOutput == "Error: No such image or container: $serviceName" as String) {
                 //allowed:
-                return null;
+                return null
             } else if (se.errorOutput == "Error: No such image, container or task: $serviceName" as String) {
                 //allowed:  Happens on newer versions of docker.
-                return null;
+                return null
             } else {
                 //propagate:
-                throw se;
+                throw se
             }
         }
     }

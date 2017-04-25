@@ -1,0 +1,6 @@
+services {
+
+  test {
+    type='test'
+  }
+}

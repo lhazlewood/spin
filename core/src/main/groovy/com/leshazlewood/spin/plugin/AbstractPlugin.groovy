@@ -1,4 +1,4 @@
-package plugins
+package com.leshazlewood.spin.plugin
 
 abstract class AbstractPlugin implements Plugin {
 
