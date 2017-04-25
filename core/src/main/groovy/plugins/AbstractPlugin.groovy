@@ -4,7 +4,7 @@ abstract class AbstractPlugin implements Plugin {
 
     protected static final Shell shell = new Shell()
 
-    String trimToNull(String s) {
+    static String trimToNull(String s) {
         String trimmed = s?.trim()
         if (trimmed.equals('')) {
             trimmed = null
