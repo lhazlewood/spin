@@ -20,7 +20,7 @@ class DockerMachinePlugin implements Plugin {
 
     boolean isInstalled(Map service) {
 
-        if(!isDockerMachineInPath()) {
+        if (!isDockerMachineInPath()) {
             return false
         }
 
@@ -59,10 +59,59 @@ class DockerMachinePlugin implements Plugin {
 
     private Map doInstall(Map service) {
 
-        //install for real:
         if (!service.driver?.name) {
             String msg = "${service.name} installation requires a driver.name value"
             throw new IllegalArgumentException(msg)
+        }
+
+        // Creation can take a while.  So before we create, resolve any cert files and ensure they exist, as this will
+        // allow us to 'fail fast'.  This is much nicer than failing after having to wait so long for the VM creation
+        final hostCertProps = ['clientCert', 'clientKey', 'caCert']
+
+        if (service.certs && service.certs instanceof Map) {
+
+            service.certs.each { String host, Map hostCerts ->
+
+                hostCertProps.each { String certPropName ->
+
+                    if (hostCerts.containsKey(certPropName)) {
+
+                        def val = hostCerts[certPropName]
+                        File file = val instanceof File ? (File) val : null
+
+                        if (val instanceof String) {
+                            if (val.startsWith('~')) {
+                                val = val.replaceFirst('~', "${System.properties['user.home']}")
+                            }
+                            if (val.startsWith("http")) { //url - download file
+                                try {
+                                    file = File.createTempFile("spin-$host", "$certPropName")
+                                    file.deleteOnExit()
+                                    def os = file.newOutputStream()
+                                    os << new URL((String) val).openStream()
+                                    os.close()
+                                } catch (Exception e) {
+                                    String path = Plugins.configPath(service.name, 'certs', host, certPropName)
+                                    String msg = "$path: unable to download file $val: ${e.message}"
+                                    throw new IllegalArgumentException(msg)
+                                }
+                            } else {
+                                //normal file
+                                file = new File(val as String)
+                            }
+                        }
+
+                        if (!file || !file.isFile()) {
+                            String path = Plugins.configPath(service.name, 'certs', host, certPropName)
+                            String msg = "$path: '$val' is not a valid file."
+                            throw new IllegalArgumentException(msg)
+                        }
+
+                        //retain the validated/verified canonical path so it can be used without problems below:
+                        hostCerts[certPropName + 'File'] = file.canonicalFile
+                    }
+                }
+            }
         }
 
         String command = "docker-machine create -d ${service.driver.name}"
@@ -84,17 +133,37 @@ class DockerMachinePlugin implements Plugin {
             throw new IllegalStateException(msg, e)
         }
 
-        if (service.containsKey('certs') && service.certs) {
+        if (service.certs && service.certs instanceof Map) {
 
             service.certs.each { String host, Map hostCerts ->
 
                 boolean ensureCertsd = true
 
-                ['clientCert', 'clientKey', 'caCert'].each { String certPropName ->
+                hostCertProps.each { String certPropName ->
 
                     if (hostCerts.containsKey(certPropName)) {
 
-                        String srcPath = hostCerts[certPropName]
+                        File file = null
+                        def val = hostCerts[certPropName + 'File']
+                        if (val) {
+                            if (val instanceof String) {
+                                val = new File(val as String)
+                            }
+                            if (val instanceof File) {
+                                file = ((File)val).canonicalFile
+                            }
+                        }
+
+                        val = hostCerts[certPropName]
+                        if (!file && val instanceof File) {
+                            file = (File)val
+                        }
+
+                        String cfgPath = val instanceof File ? ((File)val).path : val as String
+                        if (!file) {
+                            file = new File(cfgPath)
+                        }
+                        String path = ((File)file).canonicalFile.path
 
                         String unqualifiedName = 'client.cert' //default
                         if (certPropName == 'caCert') {
@@ -105,7 +174,7 @@ class DockerMachinePlugin implements Plugin {
 
                         try {
 
-                            println " - Copying $srcPath to ${service.name}:/etc/docker/certs.d/$host/$unqualifiedName"
+                            println " - Copying $cfgPath to ${service.name}:/etc/docker/certs.d/$host/$unqualifiedName"
 
                             if (ensureCertsd) {
                                 command = "docker-machine ssh ${service.machine} sudo mkdir -p /etc/docker/certs.d/$host"
@@ -116,14 +185,14 @@ class DockerMachinePlugin implements Plugin {
                                 ensureCertsd = false
                             }
 
-                            command = "docker-machine scp $srcPath ${service.machine}:/tmp/spin/certs.d/$host/$unqualifiedName"
+                            command = "docker-machine scp $path ${service.machine}:/tmp/spin/certs.d/$host/$unqualifiedName"
                             shell.executeAndWait(command, stdout)
 
                             command = "docker-machine ssh ${service.machine} sudo mv /tmp/spin/certs.d/$host/$unqualifiedName /etc/docker/certs.d/$host/$unqualifiedName"
                             shell.executeAndWait(command, stdout)
 
                         } catch (ShellException e) {
-                            String msg = "Failed to copy $host '$srcPath' to the '${service.name}' " +
+                            String msg = "Failed to copy $host '$cfgPath' to the '${service.name}' " +
                                     "machine's /etc/docker/certs.d directory.\n\n" +
                                     "Command: $command\n\n" +
                                     "Output: ${e.errorOutput}"
@@ -219,7 +288,7 @@ class DockerMachinePlugin implements Plugin {
 
         int MAX_TRIES = 20
 
-        for(int tries = 0; tries < MAX_TRIES; tries++) {
+        for (int tries = 0; tries < MAX_TRIES; tries++) {
 
             Process p = shell.execute(command)
             p.waitFor()

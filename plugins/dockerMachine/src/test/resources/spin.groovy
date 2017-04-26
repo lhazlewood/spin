@@ -10,10 +10,5 @@ services {
             }
         }
         routes = ['bridge']
-        certs {
-            'docker.aue1d.saasure.com' {
-                caCert = '$HOME/.strap/Okta-Root-CA.pem'
-            }
-        }
     }
 }
