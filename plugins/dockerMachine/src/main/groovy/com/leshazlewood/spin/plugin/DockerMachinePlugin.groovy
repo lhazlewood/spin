@@ -73,13 +73,79 @@ class DockerMachinePlugin implements Plugin {
 
         command += " ${service.machine}"
 
+        boolean stdout = 'enabled' == service.stdout
+
         println "Installing \"${service.name}\" with command: $command"
 
         try {
-            shell.executeAndWait(command, 'enabled' == service.stdout)
+            shell.executeAndWait(command, stdout)
         } catch (ShellException e) {
             String msg = "Failed to install \"${service.name}\".\n\nCommand: $command\n\nOutput: ${e.errorOutput}"
             throw new IllegalStateException(msg, e)
+        }
+
+        if (service.containsKey('certs') && service.certs) {
+
+            service.certs.each { String host, Map hostCerts ->
+
+                boolean ensureCertsd = true
+
+                ['clientCert', 'clientKey', 'caCert'].each { String certPropName ->
+
+                    if (hostCerts.containsKey(certPropName)) {
+
+                        String srcPath = hostCerts[certPropName]
+
+                        String unqualifiedName = 'client.cert' //default
+                        if (certPropName == 'caCert') {
+                            unqualifiedName = 'ca.crt'
+                        } else if (certPropName == 'clientKey') {
+                            unqualifiedName = 'client.key'
+                        }
+
+                        try {
+
+                            println " - Copying $srcPath to ${service.name}:/etc/docker/certs.d/$host/$unqualifiedName"
+
+                            if (ensureCertsd) {
+                                command = "docker-machine ssh ${service.machine} sudo mkdir -p /etc/docker/certs.d/$host"
+                                shell.executeAndWait(command, stdout)
+
+                                command = "docker-machine ssh ${service.machine} mkdir -p /tmp/spin/certs.d/$host"
+                                shell.executeAndWait(command, stdout)
+                                ensureCertsd = false
+                            }
+
+                            command = "docker-machine scp $srcPath ${service.machine}:/tmp/spin/certs.d/$host/$unqualifiedName"
+                            shell.executeAndWait(command, stdout)
+
+                            command = "docker-machine ssh ${service.machine} sudo mv /tmp/spin/certs.d/$host/$unqualifiedName /etc/docker/certs.d/$host/$unqualifiedName"
+                            shell.executeAndWait(command, stdout)
+
+                        } catch (ShellException e) {
+                            String msg = "Failed to copy $host '$srcPath' to the '${service.name}' " +
+                                    "machine's /etc/docker/certs.d directory.\n\n" +
+                                    "Command: $command\n\n" +
+                                    "Output: ${e.errorOutput}"
+                            throw new IllegalStateException(msg)
+                        }
+
+                        /*
+                        command = "docker-machine scp $srcPath ${service.machine}:/etc/docker/certs.d/$host/$unqualifiedName"
+
+                        try {
+                            shell.executeAndWait(command, 'enabled' == service.stdout)
+                        } catch (ShellException e) {
+                            String msg = "Failed to copy $host '$srcPath' to the '${service.name}' " +
+                                    "machine's /etc/docker/certs.d directory.\n\n" +
+                                    "Command: $command\n\n" +
+                                    "Output: ${e.errorOutput}"
+                            throw new IllegalStateException(msg)
+                        }
+                        */
+                    }
+                }
+            }
         }
 
         println "Installed \"${service.name}\"."
