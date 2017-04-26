@@ -482,7 +482,7 @@ class Main {
         def locations = [
                 this.userDir.toString() + File.separator + 'spin.groovy',
                 //this.userDir.toString() + File.separator + 'spin.yaml',
-                this.userDir.toString() + File.separator + '.spin.groovy',
+                //this.userDir.toString() + File.separator + '.spin.groovy',
                 //this.userDir.toString() + File.separator + '.spin.yaml',
                 this.userSpinDir.toString() + File.separator + 'spin.groovy'/*,
             this.userSpinDir.toString() + File.separator + 'spin.yaml'*/
