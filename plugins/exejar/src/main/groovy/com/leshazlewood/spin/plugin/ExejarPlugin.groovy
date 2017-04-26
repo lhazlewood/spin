@@ -48,11 +48,11 @@ class ExejarPlugin extends AbstractPlugin {
 
     Map validateArtifact(Map artifact, String serviceName, String defaultArtifactType = null, String defaultClassifier = null) {
 
-        String groupId = artifact.groupId != null ? trimToNull(artifact.groupId) : null
-        String artifactId = artifact.artifactId != null ? trimToNull(artifact.artifactId) : null
-        String version = artifact.version != null ? trimToNull(artifact.version) : null
-        String packaging = artifact.type != null ? trimToNull(artifact.type) : defaultArtifactType
-        String classifier = artifact.classifier ? trimToNull(artifact.classifier) : defaultClassifier
+        String groupId = artifact.groupId != null ? com.leshazlewood.spin.plugin.AbstractPlugin.trimToNull(artifact.groupId) : null
+        String artifactId = artifact.artifactId != null ? com.leshazlewood.spin.plugin.AbstractPlugin.trimToNull(artifact.artifactId) : null
+        String version = artifact.version != null ? com.leshazlewood.spin.plugin.AbstractPlugin.trimToNull(artifact.version) : null
+        String packaging = artifact.type != null ? com.leshazlewood.spin.plugin.AbstractPlugin.trimToNull(artifact.type) : defaultArtifactType
+        String classifier = artifact.classifier ? com.leshazlewood.spin.plugin.AbstractPlugin.trimToNull(artifact.classifier) : defaultClassifier
 
         if (groupId == null) {
             throw new IllegalArgumentException("$serviceName artifact groupId cannot be null or empty.")
@@ -187,7 +187,7 @@ class ExejarPlugin extends AbstractPlugin {
         println(/Installing "${service.name}" with command: $command/)
 
         try {
-            shell.executeAndWait(command, 'enabled' == service.stdout)
+            com.leshazlewood.spin.plugin.AbstractPlugin.shell.executeAndWait(command, 'enabled' == service.stdout)
         } catch (ShellException e) {
             String msg = "Failed to install \"${service.name}\".\n\nCommand: $command\n\nOutput: ${e.errorOutput}"
             throw new IllegalStateException(msg, e)

@@ -59,6 +59,8 @@
 
     <modules>
         <module>core</module>
+        <module>plugin-api</module>
+        <module>plugins</module>
         <module>cli</module>
         <module>dist</module>
     </modules>
@@ -72,9 +74,51 @@
             </dependency>
             <dependency>
                 <groupId>com.leshazlewood.spin</groupId>
+                <artifactId>spin-plugin-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.leshazlewood.spin</groupId>
+                <artifactId>docker-spin-plugin</artifactId>
+                <version>${project.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.leshazlewood.spin</groupId>
+                <artifactId>dockerMachine-spin-plugin</artifactId>
+                <version>${project.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.leshazlewood.spin</groupId>
+                <artifactId>exejar-spin-plugin</artifactId>
+                <version>${project.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.leshazlewood.spin</groupId>
+                <artifactId>samza-spin-plugin</artifactId>
+                <version>${project.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.leshazlewood.spin</groupId>
+                <artifactId>shell-spin-plugin</artifactId>
+                <version>${project.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.leshazlewood.spin</groupId>
+                <artifactId>test-spin-plugin</artifactId>
+                <version>${project.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.leshazlewood.spin</groupId>
                 <artifactId>spin-cli</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
@@ -124,8 +168,12 @@
                         <goals>
                             <goal>addSources</goal>
                             <goal>addTestSources</goal>
+                            <goal>generateStubs</goal>
                             <goal>compile</goal>
+                            <goal>testGenerateStubs</goal>
                             <goal>testCompile</goal>
+                            <goal>removeStubs</goal>
+                            <goal>removeTestStubs</goal>
                         </goals>
                     </execution>
                 </executions>

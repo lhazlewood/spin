@@ -26,49 +26,15 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>spin-cli</artifactId>
-    <name>Spin :: CLI</name>
+    <artifactId>spin-plugin-api</artifactId>
+    <name>Spin :: Plugin API</name>
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- compile dependencies -->
         <dependency>
             <groupId>com.leshazlewood.spin</groupId>
             <artifactId>spin-core</artifactId>
         </dependency>
-
-        <!-- runtime dependencies: -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-        </dependency>
-
-        <!-- out-of-the-box plugins (also runtime): -->
-        <dependency>
-            <groupId>com.leshazlewood.spin</groupId>
-            <artifactId>docker-spin-plugin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.leshazlewood.spin</groupId>
-            <artifactId>dockerMachine-spin-plugin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.leshazlewood.spin</groupId>
-            <artifactId>exejar-spin-plugin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.leshazlewood.spin</groupId>
-            <artifactId>samza-spin-plugin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.leshazlewood.spin</groupId>
-            <artifactId>shell-spin-plugin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.leshazlewood.spin</groupId>
-            <artifactId>test-spin-plugin</artifactId>
-        </dependency>
-
     </dependencies>
 
 </project>

@@ -307,6 +307,5 @@ class DockerPlugin extends AbstractPlugin {
         }
 
         return [status: 'uninstalled']
-
     }
 }

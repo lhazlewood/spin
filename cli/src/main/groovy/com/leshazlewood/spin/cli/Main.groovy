@@ -430,8 +430,13 @@ class Main {
             return f
         }
 
+        //else assume running in the IDE during development, default to user.dir:
+        String userDirPath = System.properties['user.dir']
+        return new File(userDirPath)
+
+        /*
         throw new IllegalStateException("System property '$sysPropName' has not been set.  This is required and " +
-                "must equal the spin installation directory path.")
+                "must equal the spin installation directory path.") */
     }
 
     static File getSpinUserDir() {
