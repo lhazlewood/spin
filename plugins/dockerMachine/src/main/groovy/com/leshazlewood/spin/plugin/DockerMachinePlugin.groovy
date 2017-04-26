@@ -129,20 +129,6 @@ class DockerMachinePlugin implements Plugin {
                                     "Output: ${e.errorOutput}"
                             throw new IllegalStateException(msg)
                         }
-
-                        /*
-                        command = "docker-machine scp $srcPath ${service.machine}:/etc/docker/certs.d/$host/$unqualifiedName"
-
-                        try {
-                            shell.executeAndWait(command, 'enabled' == service.stdout)
-                        } catch (ShellException e) {
-                            String msg = "Failed to copy $host '$srcPath' to the '${service.name}' " +
-                                    "machine's /etc/docker/certs.d directory.\n\n" +
-                                    "Command: $command\n\n" +
-                                    "Output: ${e.errorOutput}"
-                            throw new IllegalStateException(msg)
-                        }
-                        */
                     }
                 }
             }
