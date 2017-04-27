@@ -124,7 +124,9 @@ class DockerMachinePlugin implements Plugin {
 
         boolean stdout = 'enabled' == service.stdout
 
-        println "Installing \"${service.name}\" with command: $command"
+        println "Installing \"${service.name}\" with command \"$command\". " +
+                "Please be patient - this usually takes around 60 seconds with a locally cached " +
+                "Linux image and even longer when downloading a new image."
 
         try {
             shell.executeAndWait(command, stdout)
@@ -174,7 +176,7 @@ class DockerMachinePlugin implements Plugin {
 
                         try {
 
-                            println " - Copying $cfgPath to ${service.name}:/etc/docker/certs.d/$host/$unqualifiedName"
+                            //println " - Copying $cfgPath to ${service.name}:/etc/docker/certs.d/$host/$unqualifiedName"
 
                             if (ensureCertsd) {
                                 command = "docker-machine ssh ${service.machine} sudo mkdir -p /etc/docker/certs.d/$host"
