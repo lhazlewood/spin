@@ -129,7 +129,6 @@ When spin executes, it will by default look for a services configuration file lo
 locations, in order (first one found wins):
 
 * `$PWD/spin.groovy`
-* `$PWD/.spin.groovy`
 * `$HOME/.spin/spin.groovy`
 
 If you want to specify a different services config (i.e. the 'context' that spin will assume), you can use the 
