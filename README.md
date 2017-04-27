@@ -92,9 +92,6 @@ Mac via Homebrew:
 
 ```bash
 brew install lhazlewood/tap/spin
-# ensure this newly installed package is not overridden by the 
-# homebrew default 'spin' package (which is completely unrelated):
-brew pin spin
 ```
     
 If you do not use homebrew, download and install the `spin` zip package to a location you prefer.  For example:
