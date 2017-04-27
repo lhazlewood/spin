@@ -20,8 +20,7 @@ stop, uninstall and obtain the status of any spin-defined resource or service.
 
 * [Installation](#installation)
   * [Prerequisites](#prerequisites)
-    * [Groovy](#groovy)
-  * [Setup](#setup)
+  * [Install](#install)
 * [Usage](#usage)
 * [Configuration](#configuration)
   * [spin.groovy](#spingroovy)
@@ -72,43 +71,50 @@ stop, uninstall and obtain the status of any spin-defined resource or service.
 
 ### Prerequisites
 
-#### Groovy
-
-Spin is written in Groovy and delegates most logic to Groovy plugins. This requires you to have a Groovy command-line 
-interpreter available in your shell. For example, using Homebrew:
+Spin requires Java 8 or later in your `$PATH`. For example, using Homebrew:
 
 ```bash
-brew install groovy
+brew cask install java
 ```
 
-If you do not use Homebrew, [download Groovy](http://www.groovy-lang.org/download.html) 2.4.10 or later and ensure that 
-the groovy executable is in your `$PATH`.
-
-### Setup
-
-Run the following command:
+If you do not use Homebrew, download and install [JDK 8](http://www.oracle.com/technetwork/java/javase/downloads) or 
+later and ensure that `$JAVA_HOME` is set and that `$JAVA_HOME/bin` directory is in your `$PATH`.  For example, 
+in `~/.bash_profile`:
 
 ```bash
-export SPIN_HOME="$HOME/devtools/spin" && mkdir -p "$SPIN_HOME" && 
-curl -sL https://github.com/lhazlewood/spin/archive/master.tar.gz | \
-tar --strip-components=4 -C "$SPIN_HOME" -xz spin-master/src/main/groovy
+export JAVA_HOME="$(/usr/libexec/java_home)"
+export PATH="$JAVA_HOME/bin:$PATH"
 ```
 
-Ensure that the `spin` script is in your `$PATH`. For example, assuming the above download location, you can add the 
-following to `$HOME/.bash_profile`:
+### Install
+
+Mac via Homebrew:
 
 ```bash
-export SPIN_HOME="$HOME/devtools/spin"
-export PATH="$SPIN_HOME:$PATH"
+brew install lhazlewood/tap/spin
+# ensure this newly installed package is not overridden by the 
+# homebrew default 'spin' package (which is completely unrelated):
+brew pin spin
 ```
-
-This allows you to open a terminal, and from any directory run:
+    
+If you do not use homebrew, download and install the `spin` zip package to a location you prefer.  For example:
 
 ```bash
-spin
+SPIN_VERSION="0.1.0"
+mkdir -p ~/devtools/spin
+pushd ~/devtools/spin
+curl -LO "http://repo1.maven.org/maven2/com/leshazlewood/spin/spin/$SPIN_VERSION/spin-$SPIN_VERSION.zip"
+unzip "spin-$SPIN_VERSION.zip"
+ln -s "spin-$SPIN_VERSION" current
+popd
 ```
 
-And you will see the current runtime status of any services that spin knows about.
+And don't forget to add the package's `bin` directory to your path.  For example in `~/.bash_profile`:
+
+```bash
+export SPIN_HOME="$HOME/devtools/spin/current"
+export PATH="$SPIN_HOME/bin:$PATH"
+```
 
 ## Usage
 
