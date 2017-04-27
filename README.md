@@ -1,6 +1,7 @@
 # Spin
 
-Spin is a groovy-based command-line tool for resource and service orchestration. It allows you to install, start, stop, uninstall and obtain the status of any spin-defined resource or service.
+Spin is a groovy-based command-line tool for resource and service orchestration. It allows you to install, start, 
+stop, uninstall and obtain the status of any spin-defined resource or service.
 
 * [Installation](#installation)
   * [Prerequisites](#prerequisites)
@@ -27,6 +28,7 @@ Spin is a groovy-based command-line tool for resource and service orchestration.
 * [Plugins](#plugins)
   * [Docker Machine](#dockerMachine)
       <!-- * [machine](#dockerMachine-machine)
+      * [certs](#dockerMachine-certs) 
       * [driver](#dockerMachine-driver)
         * [name](#dockerMachine-driver-name)
         * [options](#dockerMachine-driver-options)
@@ -454,19 +456,190 @@ An example configuration:
         memory = 4096
       }
     }
+    certs {
+      'docker.yourcompany.com' {
+        clientCert = '~/certs/client.cert'
+        clientKey = '~/certs/client.key'
+        caCert = 'http://ca.yourcompany.com/Company-Root-CA.pem'
+      }
+    }
     routes = ['bridge']
   }
 ```
 
 The `dockerMachine` plugin currently supports the following config properties:
 
-* [machine](#dockerMachine-machine)
+* [certs](#dockerMachine-certs)
 * [driver](#dockerMachine-driver)
+* [machine](#dockerMachine-machine)
 * [routes](#dockerMachine-routes)
 
-#### <a name="dockerMachine-machine"></a> machine
+#### <a name="dockerMachine-certs"></a> certs
 
-The `machine` property is required. The value is the name of the docker machine to use when executing `docker-machine`.
+The `certs` property allows you to specify 
+[client or CA certificates](https://docs.docker.com/engine/security/certificates/) that are required when 
+accessing one or more docker registry servers.  This is helpful for organizations that have private registries and use TLS 
+client or server (or both) TLS authentication.  `caCerts` is optional.
+
+The `certs` property contains one or more named blocks where each block name is the host name (and optional port) 
+of a docker registry.  The following example shows two named blocks within `certs`:
+
+```groovy
+    // ...
+    certs {
+      'docker.yourcompany.com' {
+        clientCert = '~/certs/client.cert'
+        clientKey = '~/certs/client.key'
+        caCert = 'http://ca.yourcompany.com/Company-Root-CA.pem'
+      }
+      'docker2.yourcompany.com:8080' {
+        caCert = '~/.mycompany/ca-cert.pem'
+      }
+    }
+    // ...
+```
+
+This example indicates that two docker registries may be accessed when installing docker containers to the specified 
+docker machine - one registry is accessible via just a host name `docker.yourcompany.com` and the other registry via a
+hostname and port, `docker2.yourcompany.com:8080`
+
+The cert files referenced within the blocks will be automatically placed in the corresponding docker machine's file 
+system under `/etc/docker/certs.d/` in a directory equal to the block name.  That is, based on the example above, 
+there will be two directories created in the respective docker machine's file system:
+
+* `/etc/docker/certs.d/docker.yourcompany.com`
+* `/etc/docker/certs.d/docker2.yourcompany.com:8080`
+
+Thes are _directories_, not files.  The files defined in each named block will be placed within these respective
+directories.  More information on this can be found in docker's documentation on 
+[repository client certificates](https://docs.docker.com/engine/security/certificates/).
+
+Each named block may contain 3 properties:
+ 
+* [caCert](#dockerMachine-certs-caCert)
+* [clientCert](#dockerMachine-certs-clientCert)
+* [clientKey](#dockerMachine-certs-clientKey)
+
+##### <a name="dockerMachine-certs-caCert"></a> caCert
+
+The `caCert` property specifies the public certificate of the Certificate Authority that signed the docker registry's 
+TLS certificate.  This allows the docker client to authenticate the registry server when downloading a container.
+
+Specifying this property is mostly only necessary when the registry server uses a TLS cert that is signed by a 
+private certificate authority, such as one at your company/employer.  If your registry server uses a TLS cert 
+signed by a Well Known Internet certificate authority (like Digicert, Thawte, Verisign, etc), it is likely that 
+you do not need to configure this value.
+
+An example:
+
+```groovy
+    // ...
+    certs {
+      'docker.yourcompany.com' {
+        caCert = 'http://ca.yourcompany.com/Company-Root-CA.pem'
+      }
+    }
+    // ...
+  }
+```
+
+The `caCert` value can be a string file path, an `http` or `https` URL, or even a `File` instance. For example:
+
+* `/fully/qualified/path/to/ca-cert.pem`
+* `$HOME/.mycompany/ca-root.pem`
+* `~/mycompany/ca.pem`
+* `http://ca.mycompany.com/root.pem`
+* `new File("wherever/ca.pem")`
+
+The source file path or URL can be named anything, but when the file is copied into the docker machine file system, 
+it will reside at the following path and name as required by docker conventions:
+
+`/etc/docker/certs.d/{registryHost}/ca.crt`
+
+where `{registryHost}` equals the registry host (i.e. block name).
+
+**Note: `caCert` allows the docker client to authenticate a registry server. If that registry server requires the 
+docker client to authenticate itself with TLS authentication, you'll need to specify the
+[clientCert](#dockerMachine-certs-clientCert) and [clientKey](#dockerMachine-certs-clientKey) properties as well.**
+
+##### <a name="dockerMachine-certs-clientCert"></a> clientCert
+
+The `clientCert` property specifies the _public_ certificate that the docker client should use when authenticating
+itself with a docker registry server.  If the docker registry server requires TLS authentication, this property will
+be required when the docker client attempts to download a docker container.
+
+If the docker registry server does not require the docker client to authenticate itself, you do not need to specify
+`clientCert`or `clientKey`. But **if you specify `clientCert`, you must also specify the 
+[clientKey](#dockerMachine-certs-clientKey) property.**
+
+For example:
+
+```groovy
+    // ...
+    certs {
+      'docker.yourcompany.com' {
+        clientCert = '~/mycompany/client.cert'
+        clientKey = '~/mycompany/client.private.key'
+      }
+    }
+    // ...
+  }
+```
+
+The `clientCert` value can be a string file path, an `http` or `https` URL, or even a `File` instance. For example:
+
+* `/fully/qualified/path/to/ca-cert.pem`
+* `$HOME/.mycompany/ca-root.pem`
+* `https://company.com/myclient/client.cert`
+* `~/mycompany/ca.pem`
+* `new File("wherever/ca.pem")`
+
+The source file path or URL can be named anything, but when the file is copied into the docker machine file system, 
+it will reside at the following path and name as required by docker conventions:
+
+`/etc/docker/certs.d/{registryHost}/client.cert`
+
+where `{registryHost}` equals the registry host (i.e. block name).
+
+##### <a name="dockerMachine-certs-clientKey"></a> clientKey
+
+The `clientKey` property specifies the _private_ key that the docker client should use when authenticating
+itself with a docker registry server.  If the docker registry server requires TLS authentication, this property will
+be required when the docker client attempts to download a docker container.
+
+If the docker registry server does not require the docker client to authenticate itself, you do not need to specify
+`clientKey`or `clientCert`. But **if you specify `clientKey`, you must also specify the 
+[clientCert](#dockerMachine-certs-clientCert) property.**
+
+For example:
+
+For example:
+
+```groovy
+    // ...
+    certs {
+      'docker.yourcompany.com' {
+        clientCert = '~/mycompany/client.cert'
+        clientKey = '~/mycompany/client.private.key'
+      }
+    }
+    // ...
+  }
+```
+
+The `clientKey` value can be a string file path, an `http` or `https` URL, or even a `File` instance. For example:
+
+* `/fully/qualified/path/to/client.private.key`
+* `$HOME/.mycompany/.certs/client-private.key`
+* `~/mycompany/client.cert`
+* `new File("wherever/client.cert")`
+
+The source file path or URL can be named anything, but when the file is copied into the docker machine file system, 
+it will reside at the following path and name as required by docker conventions:
+
+`/etc/docker/certs.d/{registryHost}/client.key`
+
+where `{registryHost}` equals the registry host (i.e. block name).
 
 #### <a name="dockerMachine-driver"></a> driver
 
@@ -492,6 +665,10 @@ _--drivername-optionname-optionvalue_ flag convention on the command line. This 
 example adds the following to the docker- machine create command:
 
 `--virtualbox-memory 4096`
+
+#### <a name="dockerMachine-machine"></a> machine
+
+The `machine` property is required. The value is the name of the docker machine to use when executing `docker-machine`.
 
 #### <a name="dockerMachine-routes"></a> routes
 
