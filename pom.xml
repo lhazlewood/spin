@@ -45,6 +45,14 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+    <developers>
+        <developer>
+            <id>lhazlewood</id>
+            <name>Les Hazlewood</name>
+            <url>http://leshazlewood.com</url>
+            <timezone>-8</timezone>
+        </developer>
+    </developers>
 
     <properties>
         <source.encoding>UTF-8</source.encoding>
