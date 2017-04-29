@@ -72,6 +72,13 @@ class Shell {
 
     Process execute(List<String> args) {
 
+        /*
+        println "Process execution environment:"
+        env.each {k,v ->
+            println(" - $k: $v")
+        }
+        */
+
         ProcessBuilder builder = new ProcessBuilder(args)
                 .directory(dir)
                 .redirectErrorStream(redirectErrorStream);
@@ -79,7 +86,12 @@ class Shell {
         def builderEnv = builder.environment()
         builderEnv.putAll(env)
 
-        return builder.start()
+        try {
+            return builder.start()
+        } catch (Throwable t) {
+            String msg = "Unable to execute ProcessBuilder.start(): ${t.message}"
+            throw new IllegalStateException(msg, t);
+        }
     }
 
     Map executeAndWait(String command, boolean stdout = false) {

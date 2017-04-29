@@ -65,21 +65,8 @@ class DockerPlugin extends AbstractPlugin {
     }
 
     String getContainerId(String serviceName) {
-        try {
-            String output = shell.executeAndWait(['docker', 'inspect', '-f', '{{.Id}}', serviceName]).text
-            return output ?: null
-        } catch (ShellException se) {
-            if (se.errorOutput == "Error: No such image or container: $serviceName" as String) {
-                //allowed:
-                return null
-            } else if (se.errorOutput == "Error: No such image, container or task: $serviceName" as String) {
-                //allowed:  Happens on newer versions of docker.
-                return null
-            } else {
-                //propagate:
-                throw se
-            }
-        }
+        String output = shell.executeAndWait(['docker', 'ps', '-a', '-q', '-f', "name=$serviceName" as String]).text
+        return output ?: null
     }
 
     String getContainerStatus(String containerId) {
@@ -139,10 +126,18 @@ class DockerPlugin extends AbstractPlugin {
             throw new IllegalArgumentException("${service.name} installation requires an 'image' config value.")
         }
 
-        String command = "docker run"
+        String command = "docker run --detach --name ${service.name}"
 
-        service.ports?.each { mapping ->
-            command += " -p $mapping"
+        if (service.cpu_shares) {
+            command += " --cpu-shares=${service.cpu_shares}"
+        }
+
+        service.dns?.each {
+            command += " --dns=$it"
+        }
+
+        service.dns_search?.each { searchDomain ->
+            command += " --dns-search=$searchDomain"
         }
 
         if (service.environment) {
@@ -164,9 +159,28 @@ class DockerPlugin extends AbstractPlugin {
             command += " --hostname=${service.hostname}"
         }
 
-        service.volumes?.each { volume ->
-            command += " -v $volume"
+        service.links?.each { link ->
+            command += " --link $link"
+        }
 
+        if (service.memory) {
+            command += " --memory=${service.memory}"
+        }
+
+        if (service.memory_reservation) {
+            command += " --memory-reservation=${service.memory_reservation}"
+        }
+
+        if (service.memory_swap) {
+            command += " --memory-swap=${service.memory_swap}"
+        }
+
+        if (service.memory_swappiness) {
+            command += " --memory-swappiness=${service.memory_swappiness}"
+        }
+
+        service.ports?.each { mapping ->
+            command += " --publish $mapping"
         }
 
         if (service.ulimits) {
@@ -193,28 +207,16 @@ class DockerPlugin extends AbstractPlugin {
             }
         }
 
-        if (service.mem_limit) {
-            command += " --memory=${service.mem_limit}"
+        service.volumes?.each { volume ->
+            command += " --volume $volume"
         }
 
-        if (service.cpu_shares) {
-            command += " --cpu-shares=${service.cpu_shares}"
-        }
-
-        service.links?.each { link ->
-            command += " --link $link"
+        service.volumes_from?.each {
+            command += " --volumes-from $it"
         }
 
         service?.options?.each { option ->
             command += " $option"
-        }
-
-        if (!command.contains('--name')) {
-            command += " --name ${service.name}"
-        }
-
-        if (!command.contains('-d')) { //detach - ensure runs in background
-            command += " -d"
         }
 
         command += " ${service.image}"

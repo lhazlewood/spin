@@ -763,21 +763,51 @@ An example configuration:
 
 The docker plugin supports the following configuration options:
 
-* [cpu_shares](#docker-cpuShares)
+* [cpu_shares](#docker-cpu-shares)
+* [dns](#docker-dns)
+* [dns_search](#docker-dns-search)
 * [environment](#docker-environment)
 * [hostname](#docker-hostname)
 * [image](#docker-image)
 * [links](#docker-links)
-* [mem_limit](#docker-memLimit)
+* [memory](#docker-memory)
+* [memory_reservation](#docker-memory-reservation)
+* [memory_swap](#docker-memory-swap)
+* [memory_swappiness](#docker-memory-swappiness)
 * [options](#docker-options)
 * [ports](#docker-ports)
 * [ulimits](#docker-ulimits)
 * [volumes](#docker-volumes)
+* [volumes_from](#docker-volumes-from)
 
-#### <a name="docker-cpuShares"></a> cpu_shares
+Any docker options not listed here (not directly supported by spin yet) can be easily supported by using 
+the [options](#docker-options) property.
 
-The `cpu_shares` property is optional. It allows you to set the
-[CPU Shares Constraint](https://docs.docker.com/engine/reference/run/#cpu-share-constraint) on a container.
+#### <a name="docker-cpu-shares"></a> cpu_shares
+
+The `cpu_shares` property is an optional integer that specifies the 'weight' or portion of CPU cycles the
+container should be able to utilize relative to other containers.
+
+See the [docker cpu constraints](https://docs.docker.com/engine/admin/resource_constraints/#cpu) docs for more info.
+
+#### <a name="docker-dns"></a> dns
+
+The `dns` property is an optional list of DNS server IP addresses that should be placed in the container's 
+`/etc/resolv.conf` file.  Processes in the container, when confronted with a hostname not in `/etc/hosts`, will 
+connect to these IP addresses on port 53 looking for name resolution services.
+
+See Docker's [container DNS](https://docs.docker.com/engine/userguide/networking/default_network/configure-dns/) 
+documentation for more.
+
+#### <a name="docker-dns-search"></a> dns_search
+
+The `dns_search` property is an optional list of domain names that are searched when a bare unqualified host name is 
+used inside the container, by writing `search` lines into the container's `/etc/resolv.conf` file.  For example, when
+a container process attempts to access `host` and the search domain `example.com` is set, the DNS logic will not only
+look up `host` but also `host.example.com`.
+
+See Docker's [container DNS](https://docs.docker.com/engine/userguide/networking/default_network/configure-dns/) 
+documentation for more.
 
 #### <a name="docker-environment"></a> environment
 
@@ -824,18 +854,71 @@ An entry with the alias’s name will be created in `/etc/hosts` inside containe
 Environment variables will also be created - see the 
 [docker environment variable reference](https://docs.docker.com/compose/environment-variables/) for details.
 
-#### <a name="docker-memLimit"></a> mem_limit
+#### <a name="docker-memory"></a> memory
 
-The `mem_limit` property is optional. It allows you to set a container's upper 
-[memory limit](https://docs.docker.com/engine/reference/run/#user-memory-constraints).
+The `memory` property is an optional string that indicates the maximum amount of memory that a container can use.  If
+you set this option, the minimum allowed value is `4m` (4 megabytes).
+
+For example:
+
+```groovy
+  memory = '1g' //1 gigabyte
+```
+
+See the [docker memory constraints](https://docs.docker.com/engine/admin/resource_constraints/#memory) docs for more. 
+
+#### <a name="docker-memory-reservation"></a> memory_reservation
+
+The `memory_reservation` property is an optional string that allows you to set a soft limit smaller than `memory` 
+which is activated when Docker detects contention or low memory on the host machine.  If you use `memory_reservation`,
+it must be set lower than `memory` in order for it to take precedence.  Because it is a soft limit, it does not
+guarantee that the container will not exceed the limit.
+
+For example:
+
+```groovy
+  memory_reservation = '900m' //900 megabytes
+```
+
+See the [docker memory constraints](https://docs.docker.com/engine/admin/resource_constraints/#memory) docs for more. 
+
+#### <a name="docker-memory-swap"></a> memory_swap
+
+The `memory_swap` property is an optional string that indicates the amount of memory that a container is allowed to
+swap to disk.  See the 
+[docker memory swap](https://docs.docker.com/engine/admin/resource_constraints/#memory-swap-details) docs for more. 
+
+#### <a name="docker-memory-swappiness"></a> memory_swappiness
+
+The `memory_swappiness` property is an optional integer between 0 and 100 that indicates the percentage of a container's
+anonymous pages the host kernel can swap.  See the 
+[docker memory swappiness](https://docs.docker.com/engine/admin/resource_constraints/#memory-swappiness-details) 
+docs for more. 
 
 #### <a name="docker-options"></a> options
 
-The `options` property is optional. It is a convenience/catch-all list-of-strings property that allows you to specify 
+The `options` property is an optional convenience/catch-all list-of-strings property that allows you to specify 
 any additional options that are not already supported by the spin docker config properties.
 
 It allows you to still use a docker run option if the spin docker plugin does not yet support it via .groovy config. 
 Each value in the list is appended directly to the `docker run` command without modification.
+
+For example:
+
+```groovy
+  options [
+    '--an-option avalue',
+    '--another-option anotherValue'
+  ]
+```
+
+The above would result in a docker run command that looks like this (truncated for brevity):
+
+```bash
+docker run --detach --name namehere ...etc... --an-option avalue --another-option anotherValue ...
+```
+
+As you can see the list values are added directly, unmodified, to the docker run command.
 
 #### <a name="docker-ports"></a> ports
 
@@ -897,6 +980,19 @@ The `volumes` property allows you to mount paths as volumes, optionally specifyi
 For more information see the 
 [docker run -v](https://docs.docker.com/engine/reference/commandline/run/#mount-volume--v---read-only) flag 
 documentation and the general [Docker Volumes](https://docs.docker.com/engine/tutorials/dockervolumes/) documentation.
+
+#### <a name="docker-volumes-from"></a> volumes_from
+
+The `volumes_from` property is an optional list of container names or ids that have shared volumes that should be 
+mounted in the current container.
+
+For example:
+
+```groovy
+  volumes_from = ['aDataContainer', 'anotherDataContainer']
+```
+See the [data volume containers](https://docs.docker.com/engine/tutorials/dockervolumes/#creating-and-mounting-a-data-volume-container)
+docs for more information.
 
 ### exejar
 

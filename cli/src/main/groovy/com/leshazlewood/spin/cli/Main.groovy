@@ -45,37 +45,6 @@ class Main {
 
     private Map<String, Class> pluginClasses = [:]
 
-    static File findPluginFile(Map service, File parentDir) {
-        File pluginDir = new File(parentDir, 'plugins')
-        if (pluginDir.exists() && pluginDir.isDirectory()) {
-            String unqualifiedPluginFileName = service.type.capitalize() + 'Plugin.groovy'
-            File pluginFile = new File(pluginDir, unqualifiedPluginFileName)
-            if (pluginFile.exists() && pluginFile.isFile()) {
-                return pluginFile
-            }
-        }
-        return null
-    }
-
-    File getPluginFile(Map service) {
-
-        //Try user dir first:
-        File pluginFile = findPluginFile(service, userSpinDir)
-
-        if (!pluginFile) { //try installation dir next:
-            pluginFile = findPluginFile(service, spinInstallDir)
-        }
-
-        if (!pluginFile) {
-            String msg = "Cannot find a \"${service.type}\" plugin for service \"${service.type}\" in either " +
-                    "$userSpinDir or $spinInstallDir.  Please ensure the \"${service.type}\" value is correct, and if so," +
-                    "the plugin exists in either of these locations."
-            throw new IllegalArgumentException(msg)
-        }
-
-        return pluginFile
-    }
-
     Class getPluginClass(Map service) {
 
         final String type = service.type
@@ -95,45 +64,6 @@ class Main {
             String msg = "Unable to load plugin class $candidate for plugin type '$type' for service '${service.name}': ${uce.message}"
             throw new IllegalArgumentException(msg)
         }
-
-        /*
-        //otherwise we have to look up the plugin file:
-        File pluginFile = getPluginFile(service)
-
-        try {
-            GroovyClassLoader gcl = new GroovyClassLoader(getClass().getClassLoader())
-            gcl.addClasspath(spinInstallDir.canonicalPath)
-            gcl.addClasspath(userSpinDir.canonicalPath)
-            clazz = gcl.parseClass(pluginFile)
-            assert clazz != null
-        } catch (Exception e) {
-            String msg = "Unable to load plugin class for plugin file $pluginFile: $e.message"
-            throw new IllegalArgumentException(msg, e)
-        }
-
-        /*
-        if (!Plugin.class.isAssignableFrom(pluginClass)) {
-            String msg = "Plugin class $pluginClass from plugin file $pluginFile does not implement the ${Plugin.class.name} interface."
-            throw new IllegalArgumentException(msg)
-        }
-        */
-
-        //validate plugin supports at least one of the methods that can be called
-        /*
-        boolean found = false
-
-        PLUGIN_METHOD_NAMES.each { name ->
-            if (pluginClass.metaClass.respondsTo(name, [Map.class] as Object[])) {
-                found = true
-            }
-        }
-        if (!found) {
-            String names = PLUGIN_METHOD_NAMES.join(',')
-            String msg = "Plugin class $pluginClass loaded from plugin file $pluginFile does not support any expected " +
-                    "plugin commands ${names}"
-            throw new IllegalArgumentException(msg)
-        }
-        */
 
         //cache for later access:
         pluginClasses.put(service.type as String, clazz)
@@ -552,6 +482,7 @@ class Main {
         println "  -f <spin-config-file>        Use <spin-config-file> instead of searching default file locations"
         println "  -p name[,name2,name3,...]    A comma-delimited list of profiles to enable"
         println "  -e <environment-name>        Enable environment configuration for the specified <environment-name>"
+        println "  -v, --version                Show spin version"
         println()
         println "Commands:"
         println "  help                         Show help"
@@ -572,9 +503,25 @@ class Main {
         System.exit(status)
     }
 
+    static void printVersionAndExit() {
+        String path = "/META-INF/maven/com.leshazlewood.spin/spin-cli/pom.properties"
+        InputStream stream = Main.class.getResourceAsStream(path)
+        if (!stream) {
+            println "Unable to read $path in the project classpath."
+            System.exit(1)
+        }
+        Properties pomProps = new Properties()
+        pomProps.load(stream)
+        Properties sys = System.properties
+        println "spin version: ${pomProps.version}, home: ${sys['app.home']}"
+        println "java version: ${sys['java.version']}, vendor: ${sys['java.vendor']}, home: ${sys['java.home']}"
+        println "os name: ${sys['os.name']}, version: ${sys['os.version']}, arch: ${sys['os.arch']}"
+        System.exit(0)
+    }
+
     void doMain(String[] args) {
 
-        def commands = ['install', 'start', 'stop', 'uninstall', 'status', 'help']
+        def commands = ['install', 'start', 'stop', 'uninstall', 'status', 'help', 'version']
 
         this.classLoader = getClass().getClassLoader()
         this.spinInstallDir = getSpinInstallDir()
@@ -591,6 +538,9 @@ class Main {
             if (aCommand == null) {
                 if (arg == '-h' || arg == '--h' || arg == '-help' || arg == '--help') {
                     aCommand = 'help'
+                    break
+                } else if (arg == '-v' || arg == '--version') {
+                    aCommand = 'version'
                     break
                 } else if (arg == '-f') {
                     if (args.length <= i + 1) {
@@ -637,6 +587,8 @@ class Main {
 
         if (aCommand == 'help') {
             printUsageAndExit(0)
+        } else if (aCommand == 'version') {
+            printVersionAndExit()
         }
 
         spinConfigFile = resolveSpinConfigFile(servicesFilePath)
