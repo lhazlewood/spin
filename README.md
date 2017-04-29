@@ -97,7 +97,7 @@ brew install lhazlewood/tap/spin
 If you do not use homebrew, download and install the `spin` zip package to a location you prefer.  For example:
 
 ```bash
-SPIN_VERSION="0.1.0"
+SPIN_VERSION="0.2.0"
 mkdir -p ~/devtools/spin
 pushd ~/devtools/spin
 curl -LO "http://repo1.maven.org/maven2/com/leshazlewood/spin/spin/$SPIN_VERSION/spin-$SPIN_VERSION.zip"
