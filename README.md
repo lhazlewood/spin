@@ -118,7 +118,7 @@ export PATH="$SPIN_HOME/bin:$PATH"
 Run `spin help` to see options and commands:
 
 ```
-lhazlewood@Less-MacBook-Pro:~$ spin help
+me@myhost:~$ spin help
 Usage: spin [options] <command> [<service-name>]
 
 Options:
@@ -126,6 +126,7 @@ Options:
   -f <spin-config-file>        Use <spin-config-file> instead of searching default file locations
   -p name[,name2,name3,...]    A comma-delimited list of profiles to enable
   -e <environment-name>        Enable environment configuration for the specified <environment-name>
+  -v, --version                Show spin version
 
 Commands:
   help                         Show help
