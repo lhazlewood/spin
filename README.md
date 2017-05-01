@@ -102,7 +102,7 @@ mkdir -p ~/devtools/spin
 pushd ~/devtools/spin
 curl -LO "http://repo1.maven.org/maven2/com/leshazlewood/spin/spin/$SPIN_VERSION/spin-$SPIN_VERSION.zip"
 unzip "spin-$SPIN_VERSION.zip"
-ln -s "spin-$SPIN_VERSION" current
+rm -rf current && ln -s "spin-$SPIN_VERSION" current
 popd
 ```
 
