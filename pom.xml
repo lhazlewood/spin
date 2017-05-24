@@ -259,11 +259,17 @@
 
     <profiles>
         <profile>
-            <id>docs</id>
+            <id>jdk8</id>
+            <activation>
+                <jdk>1.8</jdk>
+            </activation>
             <properties>
                 <!-- Suppress JDK 8 JavaDoc linter yelling: -->
                 <additionalparam>-Xdoclint:none</additionalparam>
             </properties>
+        </profile>
+        <profile>
+            <id>docs</id>
             <build>
                 <plugins>
                     <plugin>
