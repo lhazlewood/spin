@@ -20,7 +20,7 @@
     <groupId>com.leshazlewood.spin</groupId>
     <artifactId>spin-root</artifactId>
     <packaging>pom</packaging>
-    <version>0.3.0</version>
+    <version>0.4.0-SNAPSHOT</version>
 
     <name>Spin</name>
     <description>A command-line tool for service and resource orchestration.</description>
@@ -30,7 +30,7 @@
         <connection>scm:git:git@github.com:lhazlewood/spin.git</connection>
         <developerConnection>scm:git:git@github.com:lhazlewood/spin.git</developerConnection>
         <url>https://github.com/lhazlewood/spin.git</url>
-        <tag>0.3.0</tag>
+        <tag>HEAD</tag>
     </scm>
     <issueManagement>
         <system>GitHub</system>
