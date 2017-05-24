@@ -71,14 +71,14 @@ stop, uninstall and obtain the status of any spin-defined resource or service.
 
 ### Prerequisites
 
-Spin requires Java 8 or later in your `$PATH`. For example, using Homebrew:
+Spin requires Java 7 or later in your `$PATH`. For example, using Homebrew:
 
 ```bash
 brew cask install java
 ```
 
-If you do not use Homebrew, download and install [JDK 8](http://www.oracle.com/technetwork/java/javase/downloads) or 
-later and ensure that `$JAVA_HOME` is set and that `$JAVA_HOME/bin` directory is in your `$PATH`.  For example, 
+If you do not use Homebrew, download and install the [JDK](http://www.oracle.com/technetwork/java/javase/downloads) 
+and ensure that `$JAVA_HOME` is set and that `$JAVA_HOME/bin` directory is in your `$PATH`.  For example, 
 in `~/.bash_profile`:
 
 ```bash
@@ -97,7 +97,7 @@ brew install lhazlewood/tap/spin
 If you do not use homebrew, download and install the `spin` zip package to a location you prefer.  For example:
 
 ```bash
-SPIN_VERSION="0.2.0"
+SPIN_VERSION="0.3.0"
 mkdir -p ~/devtools/spin
 pushd ~/devtools/spin
 curl -LO "http://repo1.maven.org/maven2/com/leshazlewood/spin/spin/$SPIN_VERSION/spin-$SPIN_VERSION.zip"
