@@ -57,7 +57,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <jdk.version>1.8</jdk.version>
+        <jdk.version>1.7</jdk.version>
         <groovy.version>2.4.10</groovy.version>
         <gmavenplus.version>1.5</gmavenplus.version>
         <slf4j.version>1.7.25</slf4j.version>
@@ -152,8 +152,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.6.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${jdk.version}</source>
+                    <target>${jdk.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
